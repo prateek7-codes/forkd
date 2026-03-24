@@ -88,15 +88,18 @@ export default function RestaurantCard({
        }}
        onClick={onSelect}
      >
-       {/* Best Pick Highlight */}
-       {isBestPick && (
-         <div className="absolute top-3 right-3 z-10">
-           <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                 style={{ background: "#ff8a3d", color: "white" }}>
-             🏆 Best Pick
-           </span>
-         </div>
-       )}
+        {/* Best Pick Highlight */}
+        {isBestPick && (
+          <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: "#ff8a3d", color: "white" }}>
+              🏆 Best Pick
+            </span>
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/90 text-gray-800">
+              Great for groups, highly rated
+            </span>
+          </div>
+        )}
        {/* Image placeholder */}
       {(() => {
         const imageUrl = getRestaurantImage(restaurant);
@@ -202,21 +205,25 @@ export default function RestaurantCard({
               e.stopPropagation();
               onToggleShortlist();
             }}
-            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-95"
+            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-95 hover:scale-110"
             style={
               isShortlisted
-                ? { background: accent, color: "white" }
+                ? { 
+                    background: accent, 
+                    color: "white",
+                    boxShadow: "0 2px 8px rgba(196,74,32,0.4)",
+                  }
                 : {
                     background: isDark ? "#252528" : "#fdf4f0",
                     color: accent,
-                    border: `1px solid ${border}`,
+                    border: `2px solid ${accent}`,
                   }
             }
             title={isShortlisted ? "Remove from shortlist" : "Add to shortlist"}
           >
             <svg
-              width="16"
-              height="16"
+              width="20"
+              height="20"
               viewBox="0 0 24 24"
               fill={isShortlisted ? "currentColor" : "none"}
               stroke="currentColor"

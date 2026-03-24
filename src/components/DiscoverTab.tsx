@@ -210,9 +210,9 @@ export default function DiscoverTab({
         <div className="flex gap-1 p-1 rounded-xl" style={{ background: isDark ? "#1a1a1d" : "#f5e8d8" }}>
           {[
             { id: "all" as SourceFilter, label: "All", icon: "🍽️" },
-            { id: "ai" as SourceFilter, label: "AI Picks (Smart)", icon: "🤖" },
-            { id: "google" as SourceFilter, label: "Popular (Top)", icon: "🌍" },
-            { id: "curated" as SourceFilter, label: "Curated", icon: "⭐" },
+            { id: "ai" as SourceFilter, label: "Smart Picks", icon: "🤖" },
+            { id: "google" as SourceFilter, label: "Top Rated", icon: "🌍" },
+            { id: "curated" as SourceFilter, label: "Editor's Picks", icon: "⭐" },
           ].map((opt) => (
             <button
               key={opt.id}

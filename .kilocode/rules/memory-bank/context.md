@@ -105,3 +105,4 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 | 2026-03-24 | Added Google Places, dark mode, badges, calendar export, mobile nav |
 | 2026-03-24 | Added deduplication, smart ranking, reminder option, empty states, photo API, map memoization |
 | 2026-03-24 | Discover UI cleanup: unified search (city/area/name), removed duplicate UI, improved source labels, added search context header, fixed empty state |
+| 2026-03-24 | UX refinements: source labels to Smart Picks/Top Rated/Editor's Picks, added "Great for groups" explanation for Best Pick, improved shortlist CTA with glow effect and larger icon |

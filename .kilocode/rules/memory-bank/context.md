@@ -2,79 +2,97 @@
 
 ## Current State
 
-**App Status**: ✅ Fully built and deployed
+**App Status**: ✅ Fully built with all requested features
 
-Forkd is a social group restaurant-chooser app with a warm terracotta/amber editorial aesthetic. All core features are implemented and working.
+Forkd is a social group restaurant-chooser app with a warm terracotta/amber editorial aesthetic. Full dark mode support, Google Places integration, and calendar export.
 
 ## Recently Completed
 
+### Core Features
 - [x] Warm terracotta/amber theme (Tailwind CSS 4 @theme variables)
 - [x] Playfair Display (display) + Inter (body) font pair
 - [x] 20 pre-loaded restaurants across Mumbai, Delhi, Bangalore, London
 - [x] Discover tab — city, cuisine, budget & tag filters + search bar
-- [x] AI discovery — `/api/suggest` calls Claude claude-3-5-haiku-20241022 to suggest restaurants for any city
+- [x] AI discovery — `/api/suggest` calls Claude claude-3-5-haiku-20241022
 - [x] Shortlist tab — add/remove restaurants, live vote preview, member avatar stacks
 - [x] Vote & Time tab — time slot picker, animated vote bars, per-member named votes, winner highlight
 - [x] Spin-the-wheel tiebreaker — canvas-based wheel with easing animation
 - [x] Restaurant Detail Modal — full info, Google-style reviews, shortlist CTA
 - [x] Manual Add tab — full form with cuisine picker, dishes, tags, budget
-- [x] Group Sidebar — switch between 5 pre-seeded members (Priya, Arjun, Meera, Rohan, Zara), edit group name
+- [x] Group Sidebar — switch between 5 pre-seeded members, edit group name
 - [x] Share Modal — copy link, native share, WhatsApp share
 - [x] Session persistence via sessionStorage
-- [x] TypeScript strict — 0 errors; ESLint — 0 errors
+
+### New Features (Latest)
+- [x] **Dark Mode** — toggle in header, persists to localStorage, defaults to system preference
+- [x] **Source Switcher** — AI Picks / Popular (Google) / Curated filter in Discover tab
+- [x] **View Toggle** — grid/map view switcher in Discover tab
+- [x] **Restaurant Badges** — AI Suggested, Popular, Featured, Trending badges on cards
+- [x] **Google Places API** — `/api/google-restaurants` endpoint for real restaurant data
+- [x] **Calendar Integration** — `/api/calendar-event` generates .ics files and Google Calendar links
+- [x] **Selection Confirmation** — post-vote flow with save to calendar options
+- [x] **Mobile Bottom Nav** — fixed bottom navigation on mobile devices
+- [x] **Micro-interactions** — card hover scale, button press scale, animated transitions
 
 ## Current Structure
 
 | File/Directory | Purpose | Status |
 |----------------|---------|--------|
-| `src/app/page.tsx` | Root app shell — tab state, all shared state | ✅ |
+| `src/app/page.tsx` | Root app shell — tab state, all shared state, dark mode | ✅ |
 | `src/app/layout.tsx` | Root layout with Playfair + Inter fonts | ✅ |
-| `src/app/globals.css` | Tailwind @theme + warm colour tokens | ✅ |
-| `src/app/api/suggest/route.ts` | AI restaurant suggestion API (Claude) | ✅ |
-| `src/lib/data.ts` | Types, seed data (20 restaurants + members) | ✅ |
-| `src/components/DiscoverTab.tsx` | Discover tab with filters + AI search | ✅ |
-| `src/components/RestaurantCard.tsx` | Reusable restaurant card | ✅ |
-| `src/components/ShortlistTab.tsx` | Shortlist view with vote preview | ✅ |
-| `src/components/VoteTab.tsx` | Voting UI + time picker + wheel spinner | ✅ |
-| `src/components/ManualAddTab.tsx` | Manual restaurant add form | ✅ |
-| `src/components/RestaurantModal.tsx` | Full-detail restaurant modal | ✅ |
-| `src/components/GroupSidebar.tsx` | Group member switcher + name editor | ✅ |
-| `src/components/ShareModal.tsx` | Copy link + WhatsApp share modal | ✅ |
+| `src/app/globals.css` | Tailwind @theme + warm colour tokens + dark mode | ✅ |
+| `src/app/api/suggest/route.ts` | AI restaurant suggestion (Claude) | ✅ |
+| `src/app/api/google-restaurants/route.ts` | Google Places API integration | ✅ |
+| `src/app/api/calendar-event/route.ts` | .ics + Google Calendar export | ✅ |
+| `src/lib/data.ts` | Types (RestaurantType, badges), seed data | ✅ |
+| `src/components/DiscoverTab.tsx` | Discover with filters, AI, source switcher, view toggle | ✅ |
+| `src/components/RestaurantCard.tsx` | Card with badges, dark mode, hover effects | ✅ |
+| `src/components/ShortlistTab.tsx` | Shortlist with vote preview, confirm winner | ✅ |
+| `src/components/VoteTab.tsx` | Voting UI + wheel spinner, dark mode | ✅ |
+| `src/components/ManualAddTab.tsx` | Add form with dark mode | ✅ |
+| `src/components/RestaurantModal.tsx` | Full-detail modal with dark mode | ✅ |
+| `src/components/GroupSidebar.tsx` | Member switcher, dark mode | ✅ |
+| `src/components/ShareModal.tsx` | Copy link, WhatsApp, dark mode | ✅ |
+| `src/components/SelectionConfirmModal.tsx` | Post-selection flow with calendar options | ✅ |
 
 ## Architecture
 
-- **Single-page app** with tab navigation (no routing needed)
-- **All state** lives in `page.tsx` via `useState<AppState>`, passed down as props
-- **sessionStorage** persistence via lazy initializer pattern (avoids setState-in-effect lint warning)
-- **AI API route** at `/api/suggest` — POST `{ city: string }`, returns `{ restaurants: Restaurant[] }`
-- **No database** — in-memory only (session storage for persistence within tab)
+- **Single-page app** with tab navigation
+- **All state** in `page.tsx` via `useState<AppState>`, passed as props
+- **Dark mode** via CSS variables + localStorage
+- **sessionStorage** for persistence
+- **API routes**: `/api/suggest`, `/api/google-restaurants`, `/api/calendar-event`
 
-## Design Tokens
+## API Endpoints
 
-| Token | Value |
-|-------|-------|
-| Primary | `#c44a20` (terracotta) |
-| Secondary | `#d97706` (amber) |
-| Background | `#fdf8f0` (warm cream) |
-| Text | `#2d2420` (charcoal warm) |
-| Gradient | `linear-gradient(135deg, #c44a20, #d97706)` |
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/suggest` | POST | Claude AI restaurant suggestions |
+| `/api/google-restaurants` | POST | Google Places API results |
+| `/api/calendar-event` | GET | Generate .ics + Google Calendar links |
+
+## Dark Mode
+
+| Token | Light | Dark |
+|-------|-------|------|
+| Background | #fdf8f0 | #0f0f10 |
+| Card | white | #1a1a1d |
+| Text | #2d2420 | #f5f5f5 |
+| Accent | #c44a20 | #ff8a3d |
 
 ## Seeded Group Members
 
 | Name | Color |
 |------|-------|
-| Priya | `#c44a20` |
-| Arjun | `#d97706` |
-| Meera | `#7c3aed` |
-| Rohan | `#059669` |
-| Zara | `#db2777` |
-
-## AI Integration
-
-The `/api/suggest` endpoint requires `ANTHROPIC_API_KEY` environment variable. Without it, the endpoint returns a 503. The UI shows an appropriate error message and falls back to showing existing seeded results.
+| Priya | #c44a20 |
+| Arjun | #d97706 |
+| Meera | #7c3aed |
+| Rohan | #059669 |
+| Zara | #db2777 |
 
 ## Session History
 
 | Date | Changes |
 |------|---------|
-| 2026-03-24 | Full Forkd app built from scratch — all tabs, modal, AI API, theming |
+| 2026-03-24 | Full Forkd app built |
+| 2026-03-24 | Added Google Places, dark mode, badges, calendar export, mobile nav |

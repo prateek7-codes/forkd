@@ -340,7 +340,9 @@ out center tags 25;
     }
 
     const data = await response.json();
-    let elements = data.elements?.filter((e: any) => e.tags?.name) || [];
+    let elements = data.elements?.filter((e: any) => e.tags?.name && !isGenericName(e.tags.name)) || [];
+    
+    elements = elements.slice(0, 20);
     
     if (areaCenter && elements.length > 0) {
       console.log(`[OSM] Filtering ${elements.length} results within 5km of ${normalizedArea}`);
@@ -362,23 +364,53 @@ out center tags 25;
   }
 }
 
+const GENERIC_NAMES = [
+  "restaurant", "cafe", "coffee", "food", "eating", "dining",
+  "hotel", "lodge", "guest house", "home", "house",
+  "cafe restaurant", "restaurant cafe", "food court"
+];
+
+function isGenericName(name: string): boolean {
+  const lower = name.toLowerCase().trim();
+  return GENERIC_NAMES.some(g => lower === g || lower.startsWith(g + " ") || lower.endsWith(" " + g));
+}
+
 function generatePseudoRandom(seed: number, idx: number): number {
   const hash = seed * 1000 + idx * 17 + 7;
   return ((hash * 9301 + 49297) % 233280) / 233280;
 }
 
+const UNSPLASH_IMAGES: Record<string, string> = {
+  indian: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&q=80",
+  chinese: "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=600&q=80",
+  italian: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80",
+  japanese: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&q=80",
+  mexican: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600&q=80",
+  american: "https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=600&q=80",
+  thai: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600&q=80",
+  korean: "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=600&q=80",
+  french: "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=600&q=80",
+  mediterranean: "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&q=80",
+  seafood: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80",
+  steakhouse: "https://images.unsplash.com/photo-1544148103-0773bf10d330?w=600&q=80",
+  cafe: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&q=80",
+  bakery: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&q=80",
+  default: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80",
+};
+
 function enrichRestaurant(
   osmData: any,
   city: string,
   area: string,
-  index: number
+  index: number,
+  useUnsplash: boolean = true
 ): Restaurant {
   const citySeed = city.length;
-  const rand = () => generatePseudoRandom(citySeed, index);
+  const rand = () => generatePseudoRandom(citySeed + index, index);
   const rating = 3.8 + rand() * 0.9;
-  const reviews = Math.floor(100 + rand() * 3000);
+  const reviews = Math.floor(200 + rand() * 4800);
   
-  const cuisineKey = osmData.tags?.cuisine?.toLowerCase() || "restaurant";
+  const cuisineKey = osmData.tags?.cuisine?.toLowerCase().split(",")[0].trim() || "restaurant";
   const cuisineOptions = cuisineTags[cuisineKey] || globalCuisines;
   const cuisine = cuisineOptions[Math.floor(rand() * cuisineOptions.length)];
   
@@ -387,7 +419,7 @@ function enrichRestaurant(
   
   const dishes = [
     "Chef's Special", "House Favorite", "Signature Dish", 
-    "Seasonal Delight", "Traditional Recipe"
+    "Seasonal Delight", "Traditional Recipe", "Local Delicacy"
   ];
   const selectedDishes = [
     dishes[Math.floor(rand() * dishes.length)],
@@ -402,6 +434,9 @@ function enrichRestaurant(
     ["Large Groups", "Live Music", "Rooftop"],
   ];
 
+  const isPopular = rating > 4.3 && reviews > 1000;
+  const imageKey = cuisineKey in UNSPLASH_IMAGES ? cuisineKey : "default";
+
   return {
     id: `osm-${city.toLowerCase()}-${index}`,
     name: osmData.tags.name,
@@ -415,9 +450,9 @@ function enrichRestaurant(
     topDishes: selectedDishes,
     tags: tagOptions[Math.floor(rand() * tagOptions.length)],
     reviews: [],
-    imageColor: COLORS[index % COLORS.length],
+    imageColor: useUnsplash ? "" : COLORS[index % COLORS.length],
     type: "ai",
-    badges: index === 0 ? ["AI Suggested"] : undefined,
+    badges: isPopular ? ["Popular"] : (index === 0 ? ["AI Suggested"] : undefined),
   };
 }
 

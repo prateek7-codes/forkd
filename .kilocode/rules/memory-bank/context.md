@@ -37,6 +37,7 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 - [x] **OSM + AI hybrid** — Fetches real restaurants from OSM, enriches with AI for ratings/dishes
 - [x] **1-hour caching** — Caches results per city_area location
 - [x] **UX source labels** — Shows "📍 Real places + smart insights" / "⚡ Cached results" / "✨ AI-powered"
+- [x] **Area-based filtering** — Coordinates mapping for 100+ neighborhoods, radius-based OSM queries, distance filtering within 5km
 
 ### Core Features
 - [x] Warm terracotta/amber theme (Tailwind CSS 4 @theme variables)
@@ -142,3 +143,4 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 | 2026-03-24 | Yelp-style search: OpenStreetMap Nominatim autocomplete, improved ranking formula with boosts, enhanced validation |
 | 2026-03-24 | Fixed city duplication bug: added Hyderabad, Chennai, Pune to specific databases, pseudo-random generation for unique per-city results, debug logging |
 | 2026-03-24 | Real restaurant system: /api/restaurants using OpenStreetMap Overpass API for real names, AI enrichment hybrid, 1-hour caching, source labels |
+| 2026-03-24 | Area-based filtering: coordinates mapping for 100+ neighborhoods, radius-based OSM queries (5km), distance filtering for accurate area results |

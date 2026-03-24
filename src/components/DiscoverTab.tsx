@@ -64,6 +64,8 @@ export default function DiscoverTab({
   const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<AutocompleteSuggestion[]>([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [osmpResults, setOsmpResults] = useState<Restaurant[]>([]);
+  const [dataSource, setDataSource] = useState<"osm" | "ai" | "cache" | null>(null);
   const cityInputRef = useRef<HTMLInputElement>(null);
   const autocompleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -161,7 +163,7 @@ export default function DiscoverTab({
     );
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (searchCity.trim()) {
       setShowAutocomplete(false);
       const normalized = normalizeSearchInput(searchCity);
@@ -172,10 +174,34 @@ export default function DiscoverTab({
       }
       
       setIsSearching(true);
-      setTimeout(() => {
-        setHasSearched(true);
+      setHasSearched(true);
+      
+      try {
+        const response = await fetch("/api/restaurants", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            city: normalized.city,
+            area: normalized.area || searchArea.trim()
+          }),
+        });
+        
+        const data = await response.json();
+        
+        if (data.restaurants && data.restaurants.length > 0) {
+          setOsmpResults(data.restaurants);
+          setDataSource(data.source);
+        } else {
+          setOsmpResults(generateAIFallback(normalized.city, normalized.area || searchArea.trim()));
+          setDataSource("ai");
+        }
+      } catch (error) {
+        console.error("Restaurant fetch error:", error);
+        setOsmpResults(generateAIFallback(normalized.city, normalized.area || searchArea.trim()));
+        setDataSource("ai");
+      } finally {
         setIsSearching(false);
-      }, 600);
+      }
     }
   };
 
@@ -189,6 +215,8 @@ export default function DiscoverTab({
     setHasSearched(false);
     setIsSearching(false);
     setShowFilters(false);
+    setOsmpResults([]);
+    setDataSource(null);
   };
 
   const activeFilterCount =
@@ -337,8 +365,11 @@ export default function DiscoverTab({
 
     const normalizedCity = normalizeSearchInput(searchCity).city;
     const normalizedArea = searchArea.trim() || normalizeSearchInput(searchCity).area;
+    
+    const sourceRestaurants = osmpResults.length > 0 ? osmpResults : restaurants;
+    const effectiveDataSource = osmpResults.length > 0 ? dataSource : null;
 
-    const filtered = restaurants.filter((r) => {
+    const filtered = sourceRestaurants.filter((r) => {
       if (sourceFilter !== "all" && r.type !== sourceFilter) return false;
       
       const rCityLower = r.city.toLowerCase();
@@ -353,7 +384,7 @@ export default function DiscoverTab({
       const areaMatch = normalizedArea === "" || 
         rAreaLower.includes(sAreaLower) ||
         sAreaLower.includes(rAreaLower);
-      
+       
       const nameMatch = searchName.trim() === "" ||
         r.name.toLowerCase().includes(searchName.toLowerCase()) ||
         r.cuisine.toLowerCase().includes(searchName.toLowerCase());
@@ -383,22 +414,12 @@ export default function DiscoverTab({
       return sortByRanking(validated, {});
     }
     
-    if (normalizedCity) {
+    if (normalizedCity && osmpResults.length === 0) {
       return generateAIFallback(normalizedCity, normalizedArea);
     }
     
     return sortByRanking(deduplicated, {});
-  }, [
-    restaurants,
-    hasSearched,
-    searchCity,
-    searchArea,
-    searchName,
-    selectedCuisine,
-    selectedBudgets,
-    selectedTags,
-    sourceFilter,
-  ]);
+  }, [restaurants, osmpResults, hasSearched, searchCity, searchArea, searchName, selectedCuisine, selectedBudgets, selectedTags, sourceFilter, dataSource]);
 
   const getSearchContext = () => {
     const parts: string[] = [];
@@ -714,9 +735,23 @@ export default function DiscoverTab({
                 </p>
               )}
             </div>
-            <p className="text-sm font-medium mb-4" style={{ color: accent }}>
-              ✨ Smart picks tailored for your group
-            </p>
+            <div className="flex items-center gap-3 mb-4">
+              {dataSource === "osm" && (
+                <p className="text-xs font-medium px-2 py-1 rounded-full" style={{ background: "#dcfce7", color: "#166534" }}>
+                  📍 Real places + smart insights
+                </p>
+              )}
+              {dataSource === "cache" && (
+                <p className="text-xs font-medium px-2 py-1 rounded-full" style={{ background: "#dbeafe", color: "#1e40af" }}>
+                  ⚡ Cached results
+                </p>
+              )}
+              {dataSource === "ai" && (
+                <p className="text-xs font-medium px-2 py-1 rounded-full" style={{ background: "#fef3c7", color: "#92400e" }}>
+                  ✨ AI-powered suggestions
+                </p>
+              )}
+            </div>
           </div>
         );
       })()}
@@ -784,7 +819,7 @@ export default function DiscoverTab({
             Try Mumbai, Delhi, Bangalore, or London
           </p>
           <p className="text-sm font-medium" style={{ color: accent }}>
-            ✨ Smart picks tailored for your group
+            📍 Real places + smart insights
           </p>
         </div>
       ) : filteredAndRanked.length === 0 ? (

@@ -26,21 +26,38 @@ export function getGooglePhotoUrl(
   return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxWidth}&photo_reference=${photoReference}&key=${apiKey}`;
 }
 
+const UNSPLASH_IMAGES: Record<string, string> = {
+  "Indian": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&q=80",
+  "Italian": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80",
+  "Japanese": "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&q=80",
+  "Chinese": "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=600&q=80",
+  "Mexican": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600&q=80",
+  "American": "https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=600&q=80",
+  "Mediterranean": "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&q=80",
+  "Thai": "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600&q=80",
+  "Korean": "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=600&q=80",
+  "French": "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=600&q=80",
+  "Middle Eastern": "https://images.unsplash.com/photo-1594007654729-407eedc4be65?w=600&q=80",
+  "Continental": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80",
+  "Seafood": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80",
+  "Steakhouse": "https://images.unsplash.com/photo-1544148103-0773bf10d330?w=600&q=80",
+  "Fusion": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80",
+  "Taiwanese": "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600&q=80",
+};
+
+const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80";
+
 export function getRestaurantImage(restaurant: Restaurant): string | null {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  if (!apiKey) return null;
-  
-  const refs = restaurant.photos;
-  if (refs && refs.length > 0) {
-    const ref = Array.isArray(refs) ? refs[0] : refs;
-    return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photo_reference=${ref}&key=${apiKey}`;
+  if (apiKey) {
+    const refs = restaurant.photos;
+    if (refs && refs.length > 0) {
+      const ref = Array.isArray(refs) ? refs[0] : refs;
+      return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=600&photo_reference=${ref}&key=${apiKey}`;
+    }
   }
   
-  if (restaurant.type === "google" && restaurant.placeId) {
-    return null;
-  }
-  
-  return null;
+  return UNSPLASH_IMAGES[restaurant.cuisine] || DEFAULT_IMAGE;
 }
 
 function normalizeString(str: string): string {

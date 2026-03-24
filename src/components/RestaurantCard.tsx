@@ -80,23 +80,27 @@ export default function RestaurantCard({
 
   return (
     <div
-      className="rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 group hover:scale-[1.02]"
+      className="rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-xl relative"
       style={{
         background: cardBg,
         border: `1px solid ${border}`,
         boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 8px rgba(196,74,32,0.06)",
        }}
        onClick={onSelect}
-     >
+    >
         {/* Best Pick Highlight */}
         {isBestPick && (
-          <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: "#ff8a3d", color: "white" }}>
-              🏆 Best Pick
+          <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between">
+            <span className="text-sm font-bold px-3 py-1.5 rounded-full shadow-lg"
+                  style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "white" }}>
+              🏆 Best pick for your group
             </span>
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/90 text-gray-800">
-              Great for groups, highly rated
+          </div>
+        )}
+        {isBestPick && (
+          <div className="absolute bottom-20 left-3 z-10">
+            <span className="text-xs font-medium px-2 py-1 rounded-lg shadow-md bg-yellow-100/95 text-gray-800">
+              Highly rated • Great for groups
             </span>
           </div>
         )}

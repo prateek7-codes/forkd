@@ -8,6 +8,16 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 
 ## Recently Completed
 
+### Launch Polish (Latest)
+- [x] **Loading state** — button shows spinner + "Finding..." text while searching
+- [x] **Filters visibility** — now hidden until results exist (clarity fix)
+- [x] **Autofocus** — city input autofocuses on page load
+- [x] **Context header** — "📍 Showing results for {area}, {city}" after search
+- [x] **Best Pick highlight** — prominent gradient badge with "Highly rated • Great for groups" explanation
+- [x] **Card images** — added Unsplash cuisine-specific fallback images
+- [x] **Hover animation** — cards lift on hover (-translate-y-1, shadow-xl)
+- [x] **Empty state** — more prominent with larger emoji and increased padding
+
 ### Core Features
 - [x] Warm terracotta/amber theme (Tailwind CSS 4 @theme variables)
 - [x] Playfair Display (display) + Inter (body) font pair
@@ -106,3 +116,4 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 | 2026-03-24 | Added deduplication, smart ranking, reminder option, empty states, photo API, map memoization |
 | 2026-03-24 | Discover UI cleanup: unified search (city/area/name), removed duplicate UI, improved source labels, added search context header, fixed empty state |
 | 2026-03-24 | UX refinements: source labels to Smart Picks/Top Rated/Editor's Picks, added "Great for groups" explanation for Best Pick, improved shortlist CTA with glow effect and larger icon |
+| 2026-03-24 | Launch polish: loading spinner, filters hidden until results, autofocus, context header with 📍, Best Pick gradient badge, Unsplash images, hover lift animation, prominent empty state |

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { type Restaurant } from "@/lib/data";
 import { CUISINES, TAGS, BUDGETS, type Budget, type Tag } from "@/lib/data";
@@ -50,6 +50,12 @@ export default function DiscoverTab({
   const [selectedBudgets, setSelectedBudgets] = useState<Budget[]>([]);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const cityInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    cityInputRef.current?.focus();
+  }, []);
 
   const toggleBudget = (b: Budget) => {
     setSelectedBudgets((prev) =>
@@ -65,7 +71,11 @@ export default function DiscoverTab({
 
   const handleSearch = () => {
     if (searchCity.trim()) {
-      setHasSearched(true);
+      setIsSearching(true);
+      setTimeout(() => {
+        setHasSearched(true);
+        setIsSearching(false);
+      }, 600);
     }
   };
 
@@ -77,6 +87,8 @@ export default function DiscoverTab({
     setSelectedBudgets([]);
     setSelectedTags([]);
     setHasSearched(false);
+    setIsSearching(false);
+    setShowFilters(false);
   };
 
   const activeFilterCount =
@@ -148,6 +160,7 @@ export default function DiscoverTab({
           <div>
             <label className="text-xs text-white/70 mb-1 block">City (required)</label>
             <input
+              ref={cityInputRef}
               type="text"
               value={searchCity}
               onChange={(e) => setSearchCity(e.target.value)}
@@ -197,11 +210,21 @@ export default function DiscoverTab({
         
         <button
           onClick={handleSearch}
-          disabled={!searchCity.trim()}
-          className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
+          disabled={!searchCity.trim() || isSearching}
+          className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-70 flex items-center justify-center gap-2"
           style={{ background: "#d97706", color: "white" }}
         >
-          Find Restaurants
+          {isSearching ? (
+            <>
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              Finding...
+            </>
+          ) : (
+            "Find Restaurants"
+          )}
         </button>
       </div>
 
@@ -260,31 +283,33 @@ export default function DiscoverTab({
         </div>
       </div>
 
-      {/* Filter Toggle */}
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setShowFilters((v) => !v)}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
-          style={{
-            background: showFilters ? accent : "white",
-            color: showFilters ? "white" : textPrimary,
-            border: `1px solid ${border}`,
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-          </svg>
-          Filters
-          {activeFilterCount > 0 && (
-            <span
-              className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-              style={{ background: showFilters ? "white" : accent, color: showFilters ? accent : "white" }}
-            >
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
-      </div>
+      {/* Filter Toggle - only show when there are results */}
+      {hasSearched && filteredAndRanked.length > 0 && (
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setShowFilters((v) => !v)}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
+            style={{
+              background: showFilters ? accent : "white",
+              color: showFilters ? "white" : textPrimary,
+              border: `1px solid ${border}`,
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+            Filters
+            {activeFilterCount > 0 && (
+              <span
+                className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                style={{ background: showFilters ? "white" : accent, color: showFilters ? accent : "white" }}
+              >
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Filter panel */}
       {showFilters && (
@@ -375,12 +400,10 @@ export default function DiscoverTab({
       )}
 
       {/* Search Context Header */}
-      {hasSearched && (
+      {hasSearched && filteredAndRanked.length > 0 && (
         <div className="flex items-center justify-between mb-4">
-          <p className="text-sm font-medium" style={{ color: textSecondary }}>
-            {filteredAndRanked.length > 0
-              ? `Showing results for "${getSearchContext()}"`
-              : `No results for "${getSearchContext()}"`}
+          <p className="text-sm font-semibold" style={{ color: textPrimary }}>
+            📍 Showing results for {searchArea.trim() ? `${searchArea.trim()}, ` : ''}{searchCity.trim()}
           </p>
           {shortlist.length > 0 && (
             <p className="text-xs" style={{ color: accent }}>
@@ -393,14 +416,14 @@ export default function DiscoverTab({
       {/* Empty / Default State */}
       {!hasSearched ? (
         <div
-          className="rounded-2xl p-12 text-center"
+          className="rounded-2xl p-16 text-center"
           style={{ background: cardBg, border: `1px solid ${border}` }}
         >
-          <div className="text-5xl mb-4">🍽️</div>
-          <p className="font-semibold text-lg mb-2" style={{ color: textPrimary }}>
+          <div className="text-6xl mb-6">🍽️</div>
+          <p className="font-bold text-xl mb-3" style={{ color: textPrimary }}>
             Start by entering a city to discover restaurants
           </p>
-          <p className="text-sm" style={{ color: textSecondary }}>
+          <p className="text-base" style={{ color: textSecondary }}>
             Try Mumbai, Delhi, Bangalore, or London
           </p>
         </div>

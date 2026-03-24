@@ -37,6 +37,7 @@ export default function DiscoverTab({
   const [searchArea, setSearchArea] = useState("");
   const [searchName, setSearchName] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
+  const [searchedCityNormalized, setSearchedCityNormalized] = useState("");
 
   const isDark = darkMode;
   const cardBg = isDark ? "#1a1a1d" : "white";
@@ -57,6 +58,34 @@ export default function DiscoverTab({
     cityInputRef.current?.focus();
   }, []);
 
+  const normalizeSearchInput = (input: string): { city: string; area: string } => {
+    const trimmed = input.trim();
+    if (!trimmed) return { city: "", area: "" };
+    
+    const parts = trimmed.split(/[,\/]/).map(p => p.trim()).filter(Boolean);
+    
+    if (parts.length >= 2) {
+      const cityPart = parts[parts.length - 1];
+      const areaParts = parts.slice(0, -1);
+      return {
+        city: cityPart.charAt(0).toUpperCase() + cityPart.slice(1).toLowerCase(),
+        area: areaParts.join(", ").replace(/\b\w/g, c => c.toUpperCase())
+      };
+    }
+    
+    const words = trimmed.split(/\s+/);
+    if (words.length >= 2 && words[words.length - 1].length <= 5) {
+      const city = words.slice(0, -1).join(" ").replace(/\b\w/g, c => c.toUpperCase());
+      const area = words[words.length - 1].charAt(0).toUpperCase() + words[words.length - 1].slice(1).toLowerCase();
+      return { city, area };
+    }
+    
+    return {
+      city: trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase(),
+      area: ""
+    };
+  };
+
   const toggleBudget = (b: Budget) => {
     setSelectedBudgets((prev) =>
       prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]
@@ -71,6 +100,13 @@ export default function DiscoverTab({
 
   const handleSearch = () => {
     if (searchCity.trim()) {
+      const normalized = normalizeSearchInput(searchCity);
+      setSearchedCityNormalized(normalized.city);
+      
+      if (normalized.area && !searchArea.trim()) {
+        setSearchArea(normalized.area);
+      }
+      
       setIsSearching(true);
       setTimeout(() => {
         setHasSearched(true);
@@ -129,13 +165,25 @@ export default function DiscoverTab({
   const filteredAndRanked = useMemo(() => {
     if (!hasSearched) return [];
 
+    const normalizedCity = normalizeSearchInput(searchCity).city;
+    const normalizedArea = searchArea.trim() || normalizeSearchInput(searchCity).area;
+
     const filtered = restaurants.filter((r) => {
       if (sourceFilter !== "all" && r.type !== sourceFilter) return false;
       
-      const cityMatch = searchCity.trim() === "" || 
-        r.city.toLowerCase().includes(searchCity.toLowerCase());
-      const areaMatch = searchArea.trim() === "" || 
-        r.area.toLowerCase().includes(searchArea.toLowerCase());
+      const rCityLower = r.city.toLowerCase();
+      const rAreaLower = r.area.toLowerCase();
+      const sCityLower = normalizedCity.toLowerCase();
+      const sAreaLower = normalizedArea.toLowerCase();
+      
+      const cityMatch = normalizedCity === "" || 
+        rCityLower === sCityLower ||
+        (rCityLower.includes(sCityLower) && sCityLower.length > 2);
+      
+      const areaMatch = normalizedArea === "" || 
+        rAreaLower.includes(sAreaLower) ||
+        sAreaLower.includes(rAreaLower);
+      
       const nameMatch = searchName.trim() === "" ||
         r.name.toLowerCase().includes(searchName.toLowerCase()) ||
         r.cuisine.toLowerCase().includes(searchName.toLowerCase());
@@ -151,8 +199,26 @@ export default function DiscoverTab({
     
     const deduplicated = deduplicateRestaurants(filtered);
     
-    if (deduplicated.length === 0 && searchCity.trim()) {
-      return generateAIFallback(searchCity.trim());
+    if (deduplicated.length === 0 && normalizedCity) {
+      return generateAIFallback(normalizedCity);
+    }
+    
+    const validated = deduplicated.filter(r => {
+      const rCityLower = r.city.toLowerCase();
+      const sCityLower = normalizedCity.toLowerCase();
+      return rCityLower === sCityLower || rCityLower.includes(sCityLower);
+    });
+    
+    if (validated.length >= 5) {
+      return sortByRanking(validated, {});
+    }
+    
+    if (validated.length > 0) {
+      return sortByRanking(validated, {});
+    }
+    
+    if (normalizedCity) {
+      return generateAIFallback(normalizedCity);
     }
     
     return sortByRanking(deduplicated, {});
@@ -435,23 +501,28 @@ export default function DiscoverTab({
       )}
 
       {/* Search Context Header */}
-      {hasSearched && filteredAndRanked.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-semibold" style={{ color: textPrimary }}>
-              📍 Showing results for {searchArea.trim() ? `${searchArea.trim()}, ` : ''}{searchCity.trim()}
-            </p>
-            {shortlist.length > 0 && (
-              <p className="text-xs" style={{ color: accent }}>
-                {shortlist.length} shortlisted
+      {hasSearched && filteredAndRanked.length > 0 && (() => {
+        const normalized = normalizeSearchInput(searchCity);
+        const displayArea = searchArea.trim() || normalized.area;
+        const displayCity = normalized.city;
+        return (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-semibold" style={{ color: textPrimary }}>
+                📍 Showing results for {displayArea ? `${displayArea}, ` : ''}{displayCity}
               </p>
-            )}
+              {shortlist.length > 0 && (
+                <p className="text-xs" style={{ color: accent }}>
+                  {shortlist.length} shortlisted
+                </p>
+              )}
+            </div>
+            <p className="text-sm font-medium mb-4" style={{ color: accent }}>
+              ✨ Smart picks tailored for your group
+            </p>
           </div>
-          <p className="text-sm font-medium mb-4" style={{ color: accent }}>
-            ✨ Smart picks tailored for your group
-          </p>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Best Pick Highlight Section */}
       {hasSearched && filteredAndRanked.length > 0 && filteredAndRanked[0] && (

@@ -12,16 +12,25 @@ const COLORS = [
   "from-red-950 to-stone-900",
 ];
 
-function buildPrompt(city: string): string {
+function buildPrompt(city: string, area?: string): string {
+  const location = area ? `${area}, ${city}` : city;
+  
   return `You are a restaurant recommendation assistant for a group dining app called Forkd.
 
-Suggest exactly 5 top restaurants in or near "${city}". For each restaurant, return a JSON object matching this TypeScript type:
+CRITICAL STRICT RULES:
+- ALL 15 restaurants MUST be ONLY in "${city}"
+- NEVER include restaurants from any other city or country
+- NEVER mention any other city in descriptions or reviews
+- Use ONLY realistic neighborhood names from ${city}
+- If area is provided ("${area}"), prioritize restaurants in that neighborhood
+
+Suggest exactly 15 top restaurants in "${location}". For each restaurant, return a JSON object matching this TypeScript type:
 
 {
   id: string,           // unique slug, e.g. "paris-1"
   name: string,         // real restaurant name
-  area: string,         // neighbourhood/district
-  city: string,         // the requested city
+  area: string,         // neighbourhood/district in ${city}
+  city: string,         // MUST be exactly "${city}"
   cuisine: string,      // cuisine type (e.g. "French", "Japanese", "Indian")
   budget: "$" | "$$" | "$$$" | "$$$$",
   rating: number,       // 3.5 to 5.0
@@ -43,13 +52,14 @@ Suggest exactly 5 top restaurants in or near "${city}". For each restaurant, ret
 Use these imageColor values (assign one to each restaurant, variety preferred):
 ${COLORS.join(", ")}
 
-Return ONLY a valid JSON array of 5 restaurant objects. No markdown, no explanation, just the JSON array.`;
+Return ONLY a valid JSON array of 15 restaurant objects. No markdown, no explanation, just the JSON array.`;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json() as { city?: string };
+    const body = await request.json() as { city?: string; area?: string };
     const city = (body.city ?? "").trim();
+    const area = (body.area ?? "").trim();
 
     if (!city) {
       return NextResponse.json({ error: "City is required" }, { status: 400 });
@@ -74,11 +84,11 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         model: "claude-3-5-haiku-20241022",
-        max_tokens: 4000,
+        max_tokens: 6000,
         messages: [
           {
             role: "user",
-            content: buildPrompt(city),
+            content: buildPrompt(city, area),
           },
         ],
       }),
@@ -115,9 +125,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate and sanitize
+    // Validate and sanitize - STRICT city enforcement
+    const cityLower = city.toLowerCase();
     const valid = restaurants
       .filter((r) => r.name && r.cuisine && r.budget)
+      .filter((r) => {
+        const rCity = (r.city ?? "").toLowerCase();
+        return rCity === cityLower || rCity.includes(cityLower);
+      })
       .map((r, i) => ({
         ...r,
         id: r.id || `ai-${city.toLowerCase().replace(/\s+/g, "-")}-${i + 1}`,

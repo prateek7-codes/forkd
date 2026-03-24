@@ -48,6 +48,8 @@ export interface Restaurant {
   isManuallyAdded?: boolean;
   type?: RestaurantType;
   badges?: RestaurantBadge[];
+  distanceKm?: number;
+  goodFor?: string[];
   // Google-specific fields
   address?: string;
   phoneNumber?: string;

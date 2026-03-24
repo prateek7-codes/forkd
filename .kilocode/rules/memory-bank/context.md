@@ -12,6 +12,13 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 - [x] **Auto-fetch area coordinates** — Uses Nominatim API to auto-fetch coordinates for any area (no manual mapping required), with fallback to cached areas
 - [x] **Smarter Best Pick** — Now uses weighted scoring: group-friendly tags (+25/+20), rating, review count, budget balance, badges (Popular/Featured)
 - [x] **Premium Airbnb-like UI** — Softer shadows, smoother 300ms animations, backdrop-blur on badges, rounded-xl buttons, refined spacing, hover scale effects
+- [x] **Reduced search radius** — Now uses 2km radius (was 5km) for more accurate area results
+- [x] **Distance-based ranking** — New formula: (distanceScore * 0.4) + (rating * 0.4) + (logReviews * 0.2)
+- [x] **Distance display** — Shows "X km away" on each restaurant card
+- [x] **Good For tags** — Each restaurant now shows "Good for" tags (groups, date, budget, etc.)
+- [x] **2 reviews per restaurant** — Increased from 1 to 2 reviews per restaurant
+- [x] **Best Pick CTA** — Added "Add to Shortlist →" button in Best Pick section
+- [x] **Skeleton loading** — Shows animated skeleton cards + "Finding restaurants..." message during search
 
 ### Launch Polish (Latest)
 - [x] **Loading state** — button shows spinner + "Finding..." text while searching

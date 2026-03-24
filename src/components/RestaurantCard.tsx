@@ -55,7 +55,7 @@ export default function RestaurantCard({
   const accent = isDark ? "#ff8a3d" : "#c44a20";
   const border = isDark ? "#2d2d30" : "#f0d8c4";
 
-  const { name, area, city, cuisine, budget, rating, totalReviews, description, topDishes, tags, imageColor, isManuallyAdded, badges, type } =
+  const { name, area, city, cuisine, budget, rating, totalReviews, description, topDishes, tags, imageColor, isManuallyAdded, badges, type, distanceKm, goodFor } =
     restaurant;
 
   const getBadgeColor = (badge?: string) => {
@@ -191,18 +191,34 @@ export default function RestaurantCard({
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-2">
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-3 mb-2">
               <StarRating rating={rating} />
               <span className="text-xs" style={{ color: textSecondary }}>
                 ({totalReviews.toLocaleString()})
               </span>
+              {distanceKm !== undefined && (
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: "#e0f2fe", color: "#0369a1" }}>
+                  📍 {distanceKm} km
+                </span>
+              )}
             </div>
-            <span
-              className="text-xs font-medium px-3 py-1 rounded-lg"
-              style={{ background: isDark ? "#252528" : "#fdf4f0", color: accent, border: `1px solid ${border}` }}
-            >
-              {cuisine}
-            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className="text-xs font-medium px-3 py-1 rounded-lg"
+                style={{ background: isDark ? "#252528" : "#fdf4f0", color: accent, border: `1px solid ${border}` }}
+              >
+                {cuisine}
+              </span>
+              {goodFor && goodFor.slice(0, 2).map((tag) => (
+                <span
+                  key={tag}
+                  className="text-xs px-2 py-1 rounded-lg"
+                  style={{ background: isDark ? "#1e1e22" : "#f3f4f6", color: textSecondary }}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* Shortlist button */}

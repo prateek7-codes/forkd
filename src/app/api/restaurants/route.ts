@@ -298,17 +298,21 @@ const fallbackAreaCoords: Record<string, { lat: number; lon: number }> = {
 
 const R = 6371;
 
-function isWithinRadius(lat: number, lon: number, center: { lat: number; lon: number }, radiusKm: number): boolean {
-  const dLat = (lat - center.lat) * (Math.PI / 180);
-  const dLon = (lon - center.lon) * (Math.PI / 180);
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
   
   const a = 
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(center.lat * Math.PI / 180) *
-    Math.cos(lat * Math.PI / 180) *
+    Math.cos(lat1 * Math.PI / 180) *
+    Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon / 2) ** 2;
   
-  const distance = 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function isWithinRadius(lat: number, lon: number, center: { lat: number; lon: number }, radiusKm: number): boolean {
+  const distance = calculateDistance(lat, lon, center.lat, center.lon);
   return distance <= radiusKm;
 }
 
@@ -333,7 +337,7 @@ function setCache(key: string, data: Restaurant[]): void {
   cache.set(key, { data, timestamp: Date.now() });
 }
 
-async function fetchFromOSM(city: string, area?: string): Promise<any[]> {
+async function fetchFromOSM(city: string, area?: string): Promise<{ data: any[]; areaCenter: { lat: number; lon: number } | null }> {
   const normalizedArea = area?.toLowerCase().trim();
   
   let areaCenter: { lat: number; lon: number } | null = null;
@@ -351,8 +355,8 @@ async function fetchFromOSM(city: string, area?: string): Promise<any[]> {
     overpassQuery = `
 [out:json][timeout:30];
 (
-  node["amenity"="restaurant"](around:5000, ${areaCenter.lat}, ${areaCenter.lon});
-  way["amenity"="restaurant"](around:5000, ${areaCenter.lat}, ${areaCenter.lon});
+  node["amenity"="restaurant"](around:2000, ${areaCenter.lat}, ${areaCenter.lon});
+  way["amenity"="restaurant"](around:2000, ${areaCenter.lat}, ${areaCenter.lon});
 );
 out center tags 25;
 `;
@@ -360,7 +364,7 @@ out center tags 25;
     overpassQuery = `
 [out:json][timeout:30];
 area["name"="${city}"]["admin_level"~"4|6|8"]->.city;
-area.city(around:50000)->.search;
+area.city(around:20000)->.search;
 (
   node["amenity"="restaurant"](area.search);
   way["amenity"="restaurant"](area.search);
@@ -380,7 +384,7 @@ out center tags 25;
 
     if (!response.ok) {
       console.error("[OSM] Overpass API error:", response.status);
-      return [];
+      return { data: [], areaCenter };
     }
 
     const data = await response.json();
@@ -391,16 +395,16 @@ out center tags 25;
     if (areaCenter && elements.length > 0) {
       elements = elements.filter((e: any) => {
         if (e.lat && e.lon) {
-          return isWithinRadius(e.lat, e.lon, areaCenter, 5);
+          return isWithinRadius(e.lat, e.lon, areaCenter, 2);
         }
         return true;
       });
     }
     
-    return elements;
+    return { data: elements, areaCenter };
   } catch (error) {
     console.error("[OSM] Fetch error:", error);
-    return [];
+    return { data: [], areaCenter };
   }
 }
 
@@ -443,7 +447,8 @@ function enrichRestaurant(
   city: string,
   area: string,
   index: number,
-  useUnsplash: boolean = true
+  useUnsplash: boolean = true,
+  areaCenter?: { lat: number; lon: number }
 ): Restaurant {
   const citySeed = city.length;
   const rand = () => generatePseudoRandom(citySeed + index, index);
@@ -496,6 +501,17 @@ function enrichRestaurant(
   const isPopular = rating > 4.3 && reviews > 1000;
   const imageKey = cuisineKey in UNSPLASH_IMAGES ? cuisineKey : "default";
 
+  const distance = areaCenter && osmData.lat && osmData.lon 
+    ? calculateDistance(areaCenter.lat, areaCenter.lon, osmData.lat, osmData.lon)
+    : undefined;
+
+  const goodForOptions = [
+    ["Great for groups", "Family friendly", "Casual dining"],
+    ["Romantic date", "Fine dining", "Special occasion"],
+    ["Business meetings", "Quick bites", "Late night"],
+    ["Budget-friendly", "Value for money", "All-day dining"],
+  ];
+
   return {
     id: `osm-${city.toLowerCase()}-${index}`,
     name: osmData.tags.name,
@@ -518,6 +534,8 @@ function enrichRestaurant(
     imageColor: useUnsplash ? "" : COLORS[index % COLORS.length],
     type: "ai",
     badges: isPopular ? ["Popular"] : (index === 0 ? ["AI Suggested"] : undefined),
+    distanceKm: distance ? Math.round(distance * 10) / 10 : undefined,
+    goodFor: goodForOptions[Math.floor(rand() * goodForOptions.length)],
   };
 }
 
@@ -602,13 +620,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ restaurants: cached, source: "cache" });
     }
 
-    let osmData = await fetchFromOSM(city, area);
+    const osmResult = await fetchFromOSM(city, area);
+    let osmData = osmResult.data;
+    const areaCenter = osmResult.areaCenter;
     
     if (osmData.length === 0) {
       const fallbackQuery = `
 [out:json][timeout:30];
 area["name"="${city}"]->.city;
-area.city(around:100000)->.search;
+area.city(around:10000)->.search;
 (
   node["amenity"="restaurant"](area.search);
   way["amenity"="restaurant"](area.search);
@@ -636,7 +656,7 @@ out center tags 25;
     }
 
     const osmtpRestaurants = osmData.slice(0, 20).map((r: any, idx: number) => 
-      enrichRestaurant(r, city, area, idx)
+      enrichRestaurant(r, city, area, idx, true, areaCenter || undefined)
     );
 
     const enriched = await enrichWithAI(osmData.slice(0, 10), city);

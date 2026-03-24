@@ -188,6 +188,7 @@ export interface RankingScore {
   total: number;
   rating: number;
   reviewWeight: number;
+  distance: number;
   aiBonus: number;
   voteWeight: number;
 }
@@ -199,25 +200,34 @@ export function calculateRankingScore(
   const reviews = Math.max(1, restaurant.totalReviews);
   const logReviews = Math.log10(reviews);
   
-  const ratingScore = restaurant.rating * 20 * 0.35;
+  const ratingScore = restaurant.rating * 0.4 * 20;
   
-  const reviewScore = logReviews * 10 * 0.25;
+  const reviewScore = logReviews * 10 * 0.2;
+  
+  let distanceScore = 0;
+  if (restaurant.distanceKm !== undefined && restaurant.distanceKm !== null) {
+    const maxDist = 5;
+    distanceScore = Math.max(0, (maxDist - restaurant.distanceKm) / maxDist) * 100 * 0.4;
+  } else {
+    distanceScore = 50 * 0.4;
+  }
   
   const aiScore = calculateAIScore(restaurant);
-  const aiBonusScore = aiScore * 100 * 0.25;
+  const aiBonusScore = aiScore * 100 * 0.15;
   
-  const voteScore = voteCount * 10 * 0.15;
+  const voteScore = voteCount * 10 * 0.1;
   
   let ratingBoost = 0;
   if (restaurant.rating > 4.4) ratingBoost += 5;
   if (restaurant.totalReviews > 1000) ratingBoost += 3;
   
-  const total = Math.min(100, ratingScore + reviewScore + aiBonusScore + voteScore + ratingBoost);
+  const total = Math.min(100, ratingScore + reviewScore + distanceScore + aiBonusScore + voteScore + ratingBoost);
   
   return {
     total: Math.round(total * 10) / 10,
     rating: Math.round(ratingScore * 10) / 10,
     reviewWeight: Math.round(reviewScore * 10) / 10,
+    distance: Math.round(distanceScore * 10) / 10,
     aiBonus: Math.round(aiBonusScore * 10) / 10,
     voteWeight: Math.round(voteScore * 10) / 10,
   };

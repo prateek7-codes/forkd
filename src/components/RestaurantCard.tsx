@@ -104,22 +104,24 @@ export default function RestaurantCard({
             </span>
           </div>
         )}
-       {/* Image placeholder */}
+        {/* Image Section */}
       {(() => {
         const imageUrl = getRestaurantImage(restaurant);
         return (
           <>
             <div
-              className={`relative ${compact ? "h-28" : "h-40"} flex items-end p-3`}
+              className={`relative ${compact ? "h-32" : "h-48"} flex items-end p-3 overflow-hidden`}
               style={{
                 background: imageUrl 
                   ? `url(${imageUrl}) center/cover no-repeat`
-                  : `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
+                  : `linear-gradient(135deg, #c44a20 0%, #d97706 100%)`,
               }}
             >
               {!imageUrl && (
                 <div className={`absolute inset-0 bg-gradient-to-br ${imageColor}`} />
               )}
+              {/* Dark overlay for text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
               {/* Gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 

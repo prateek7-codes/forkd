@@ -401,7 +401,7 @@ export default function DiscoverTab({
 
       {/* Search Context Header */}
       {hasSearched && filteredAndRanked.length > 0 && (
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-semibold" style={{ color: textPrimary }}>
             📍 Showing results for {searchArea.trim() ? `${searchArea.trim()}, ` : ''}{searchCity.trim()}
           </p>
@@ -413,6 +413,53 @@ export default function DiscoverTab({
         </div>
       )}
 
+      {/* Best Pick Highlight Section */}
+      {hasSearched && filteredAndRanked.length > 0 && filteredAndRanked[0] && (
+        <div 
+          className="rounded-2xl p-5 mb-6 relative overflow-hidden"
+          style={{ 
+            background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
+            border: "2px solid #f59e0b",
+          }}
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
+            <svg viewBox="0 0 200 200" fill="#f59e0b">
+              <path d="M100 0L123 77L200 100L123 123L100 200L77 123L0 100L77 77Z"/>
+            </svg>
+          </div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">🏆</span>
+              <span className="text-sm font-bold uppercase tracking-wider" style={{ color: "#92400e" }}>
+                Best pick for your group
+              </span>
+            </div>
+            <h3 className="text-xl font-bold mb-1" style={{ color: "#1f2937" }}>
+              {filteredAndRanked[0].name}
+            </h3>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm font-semibold" style={{ color: "#b45309" }}>
+                {filteredAndRanked[0].cuisine} • {filteredAndRanked[0].budget}
+              </span>
+              <span className="text-sm font-bold px-2 py-0.5 rounded-full" style={{ background: "#f59e0b", color: "white" }}>
+                ★ {filteredAndRanked[0].rating.toFixed(1)}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: "white", color: "#6b7280" }}>
+                ✨ Great for groups
+              </span>
+              <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: "white", color: "#6b7280" }}>
+                💰 Balanced pricing
+              </span>
+              <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: "white", color: "#6b7280" }}>
+                ⭐ Highly rated
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Empty / Default State */}
       {!hasSearched ? (
         <div
@@ -421,10 +468,13 @@ export default function DiscoverTab({
         >
           <div className="text-6xl mb-6">🍽️</div>
           <p className="font-bold text-xl mb-3" style={{ color: textPrimary }}>
-            Start by entering a city to discover restaurants
+            Find the perfect place for your group
           </p>
-          <p className="text-base" style={{ color: textSecondary }}>
+          <p className="text-base mb-4" style={{ color: textSecondary }}>
             Try Mumbai, Delhi, Bangalore, or London
+          </p>
+          <p className="text-sm font-medium" style={{ color: accent }}>
+            ✨ Smart picks tailored for your group
           </p>
         </div>
       ) : filteredAndRanked.length === 0 ? (

@@ -1,12 +1,21 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { type Restaurant } from "@/lib/data";
 import { CUISINES, TAGS, BUDGETS, type Budget, type Tag } from "@/lib/data";
 import RestaurantCard from "@/components/RestaurantCard";
 import { sortByRanking, deduplicateRestaurants } from "@/lib/utils";
 import { type SourceFilter } from "@/app/page";
+
+interface AutocompleteSuggestion {
+  displayName: string;
+  location: string;
+  city: string;
+  area: string;
+  state: string;
+  country: string;
+}
 
 interface Props {
   restaurants: Restaurant[];
@@ -52,10 +61,22 @@ export default function DiscoverTab({
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<AutocompleteSuggestion[]>([]);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const cityInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     cityInputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (autocompleteTimeoutRef.current) {
+        clearTimeout(autocompleteTimeoutRef.current);
+      }
+    };
   }, []);
 
   const normalizeSearchInput = (input: string): { city: string; area: string } => {
@@ -86,6 +107,48 @@ export default function DiscoverTab({
     };
   };
 
+  const fetchAutocomplete = useCallback(async (query: string) => {
+    if (query.length < 2) {
+      setAutocompleteSuggestions([]);
+      return;
+    }
+
+    setIsLoadingSuggestions(true);
+
+    try {
+      const response = await fetch(`/api/autocomplete?q=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      setAutocompleteSuggestions(data.suggestions || []);
+    } catch (error) {
+      console.error("Autocomplete error:", error);
+      setAutocompleteSuggestions([]);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  }, []);
+
+  const handleCityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchCity(value);
+    
+    if (autocompleteTimeoutRef.current) {
+      clearTimeout(autocompleteTimeoutRef.current);
+    }
+    
+    autocompleteTimeoutRef.current = setTimeout(() => {
+      fetchAutocomplete(value);
+      setShowAutocomplete(true);
+    }, 300);
+  };
+
+  const handleSelectSuggestion = (suggestion: AutocompleteSuggestion) => {
+    const location = suggestion.area ? `${suggestion.area}, ${suggestion.city}` : suggestion.city;
+    setSearchCity(location);
+    setSearchArea(suggestion.area);
+    setAutocompleteSuggestions([]);
+    setShowAutocomplete(false);
+  };
+
   const toggleBudget = (b: Budget) => {
     setSelectedBudgets((prev) =>
       prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]
@@ -100,6 +163,7 @@ export default function DiscoverTab({
 
   const handleSearch = () => {
     if (searchCity.trim()) {
+      setShowAutocomplete(false);
       const normalized = normalizeSearchInput(searchCity);
       setSearchedCityNormalized(normalized.city);
       
@@ -307,20 +371,51 @@ export default function DiscoverTab({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
           <div>
             <label className="text-xs text-white/70 mb-1 block">City (required)</label>
-            <input
-              ref={cityInputRef}
-              type="text"
-              value={searchCity}
-              onChange={(e) => setSearchCity(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="e.g. Mumbai"
-              className="w-full rounded-xl px-3 py-2 text-sm outline-none"
-              style={{
-                background: "rgba(255,255,255,0.12)",
-                color: "white",
-                border: "1px solid rgba(255,255,255,0.2)",
-              }}
-            />
+            <div className="relative">
+              <input
+                ref={cityInputRef}
+                type="text"
+                value={searchCity}
+                onChange={handleCityInputChange}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                onFocus={() => searchCity.length >= 2 && setShowAutocomplete(true)}
+                placeholder="e.g. Mumbai, Bandra"
+                className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+                style={{
+                  background: "rgba(255,255,255,0.12)",
+                  color: "white",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                }}
+              />
+              {showAutocomplete && autocompleteSuggestions.length > 0 && (
+                <div
+                  className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden shadow-lg"
+                  style={{ background: cardBg, border: `1px solid ${border}` }}
+                >
+                  {autocompleteSuggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSelectSuggestion(suggestion)}
+                      className="w-full px-3 py-2 text-left text-sm hover:opacity-80 transition-opacity"
+                      style={{ color: textPrimary }}
+                    >
+                      <div className="font-medium">{suggestion.city}{suggestion.area && `, ${suggestion.area}`}</div>
+                      <div className="text-xs truncate" style={{ color: textSecondary }}>
+                        {suggestion.state}{suggestion.country && `, ${suggestion.country}`}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {showAutocomplete && isLoadingSuggestions && (
+                <div
+                  className="absolute z-50 w-full mt-1 rounded-xl p-3 shadow-lg text-center text-sm"
+                  style={{ background: cardBg, color: textSecondary }}
+                >
+                  Loading...
+                </div>
+              )}
+            </div>
           </div>
           <div>
             <label className="text-xs text-white/70 mb-1 block">Area (optional)</label>

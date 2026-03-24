@@ -196,25 +196,30 @@ export function calculateRankingScore(
   restaurant: Restaurant,
   voteCount: number = 0
 ): RankingScore {
-  const rating = restaurant.rating * 8;
-  
   const reviews = Math.max(1, restaurant.totalReviews);
   const logReviews = Math.log10(reviews);
-  const reviewWeight = Math.min(20, logReviews * 4);
+  
+  const ratingScore = restaurant.rating * 20 * 0.35;
+  
+  const reviewScore = logReviews * 10 * 0.25;
   
   const aiScore = calculateAIScore(restaurant);
-  const aiBonus = aiScore * 30;
+  const aiBonusScore = aiScore * 100 * 0.25;
   
-  const voteWeight = Math.min(10, voteCount * 5);
+  const voteScore = voteCount * 10 * 0.15;
   
-  const total = Math.min(100, rating + reviewWeight + aiBonus + voteWeight);
+  let ratingBoost = 0;
+  if (restaurant.rating > 4.4) ratingBoost += 5;
+  if (restaurant.totalReviews > 1000) ratingBoost += 3;
+  
+  const total = Math.min(100, ratingScore + reviewScore + aiBonusScore + voteScore + ratingBoost);
   
   return {
     total: Math.round(total * 10) / 10,
-    rating: Math.round(rating * 10) / 10,
-    reviewWeight: Math.round(reviewWeight * 10) / 10,
-    aiBonus: Math.round(aiBonus * 10) / 10,
-    voteWeight: Math.round(voteWeight * 10) / 10,
+    rating: Math.round(ratingScore * 10) / 10,
+    reviewWeight: Math.round(reviewScore * 10) / 10,
+    aiBonus: Math.round(aiBonusScore * 10) / 10,
+    voteWeight: Math.round(voteScore * 10) / 10,
   };
 }
 

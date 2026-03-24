@@ -27,6 +27,8 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 - [x] **AI prompt** — updated with STRICT rules: ALL restaurants must be ONLY in requested city
 - [x] **Yelp-like data** — city-specific restaurant databases for Paris, Tokyo, New York, London, Mumbai, Delhi, Bangalore
 - [x] **Smart fallback** — generates contextually accurate results per city with local cuisine/area names
+- [x] **Autocomplete** — OpenStreetMap Nominatim API integration for location suggestions with 300ms debounce
+- [x] **Yelp-style ranking** — (rating * 0.35) + (logReviews * 0.25) + (aiScore * 0.25) + (voteScore * 0.15) with boosts for rating > 4.4 and reviews > 1000
 
 ### Core Features
 - [x] Warm terracotta/amber theme (Tailwind CSS 4 @theme variables)
@@ -129,3 +131,4 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 | 2026-03-24 | Launch polish: loading spinner, filters hidden until results, autofocus, context header with 📍, Best Pick golden banner with reasons, Unsplash images, hover lift animation, empty state with "Smart picks tailored for your group", larger card images |
 | 2026-03-24 | AI fallback: auto-generates 15 realistic restaurants for any city, removes dead-end states, "We could not find exact matches" message |
 | 2026-03-24 | Global search accuracy: input normalization (Bandra Mumbai → Mumbai), strict city matching, validation layer, updated AI prompt with location strictness, Yelp-like city-specific restaurant databases |
+| 2026-03-24 | Yelp-style search: OpenStreetMap Nominatim autocomplete, improved ranking formula with boosts, enhanced validation |

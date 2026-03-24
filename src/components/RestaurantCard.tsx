@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { type Restaurant } from "@/lib/data";
+import { getRestaurantImage } from "@/lib/utils";
 
 interface Props {
   restaurant: Restaurant;
@@ -85,70 +87,85 @@ export default function RestaurantCard({
       onClick={onSelect}
     >
       {/* Image placeholder */}
-      <div
-        className={`relative ${compact ? "h-28" : "h-40"} bg-gradient-to-br ${imageColor} flex items-end p-3`}
-      >
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+      {(() => {
+        const imageUrl = getRestaurantImage(restaurant);
+        return (
+          <>
+            <div
+              className={`relative ${compact ? "h-28" : "h-40"} flex items-end p-3`}
+              style={{
+                background: imageUrl 
+                  ? `url(${imageUrl}) center/cover no-repeat`
+                  : `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`,
+              }}
+            >
+              {!imageUrl && (
+                <div className={`absolute inset-0 bg-gradient-to-br ${imageColor}`} />
+              )}
+              {/* Gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
-        {/* Badges */}
-        <div className="absolute top-3 left-3 flex gap-1">
-          {badges?.map((badge) => (
-            <span
-              key={badge}
-              className="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1"
-              style={{ background: getBadgeColor(badge), color: "white" }}
-            >
-              {getBadgeIcon(badge)} {badge}
-            </span>
-          ))}
-          {isManuallyAdded && (
-            <span
-              className="text-xs font-semibold px-2 py-0.5 rounded-full"
-              style={{ background: "#d97706", color: "white" }}
-            >
-              Added by you
-            </span>
-          )}
-          {type === "google" && (
-            <span
-              className="text-xs font-semibold px-2 py-0.5 rounded-full"
-              style={{ background: "#0284c7", color: "white" }}
-            >
-              🌍 Popular
-            </span>
-          )}
-          {type === "ai" && (
-            <span
-              className="text-xs font-semibold px-2 py-0.5 rounded-full"
-              style={{ background: "#7c3aed", color: "white" }}
-            >
-              🤖 AI
-            </span>
-          )}
-        </div>
+              {/* Badges */}
+              <div className="absolute top-3 left-3 flex gap-1">
+                {badges?.map((badge) => (
+                  <span
+                    key={badge}
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1"
+                    style={{ background: getBadgeColor(badge), color: "white" }}
+                  >
+                    {getBadgeIcon(badge)} {badge}
+                  </span>
+                ))}
+                {isManuallyAdded && (
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{ background: "#d97706", color: "white" }}
+                  >
+                    Added by you
+                  </span>
+                )}
+                {type === "google" && (
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{ background: "#0284c7", color: "white" }}
+                  >
+                    🌍 Popular
+                  </span>
+                )}
+                {type === "ai" && (
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{ background: "#7c3aed", color: "white" }}
+                  >
+                    🤖 AI
+                  </span>
+                )}
+              </div>
 
-        {/* Budget badge */}
-        <span
-          className="absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full"
-          style={{ background: "rgba(0,0,0,0.5)", color: "white" }}
-        >
-          {budget}
-        </span>
+              {/* Budget badge */}
+              <span
+                className="absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full"
+                style={{ background: "rgba(0,0,0,0.5)", color: "white" }}
+              >
+                {budget}
+              </span>
 
-        {/* Name over image */}
-        <div className="relative z-10">
-          <h3
-            className={`font-bold text-white ${compact ? "text-base" : "text-lg"} leading-tight`}
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            {name}
-          </h3>
-          <p className="text-white/80 text-xs mt-0.5">
-            {area}, {city}
-          </p>
-        </div>
-      </div>
+              {/* Name over image */}
+              <div className="relative z-10">
+                <h3
+                  className={`font-bold text-white ${compact ? "text-base" : "text-lg"} leading-tight`}
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  {name}
+                </h3>
+                <p className="text-white/80 text-xs mt-0.5">
+                  {area}, {city}
+                </p>
+              </div>
+            </div>
+          </>
+        );
+      })()}
 
       {/* Content */}
       <div className="p-4">

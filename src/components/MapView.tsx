@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { type Restaurant } from "@/lib/data";
 
 interface MapViewProps {
@@ -97,6 +97,27 @@ export default function MapView({
     document.head.appendChild(script);
   }, [apiKey, checkGoogleMaps, mapError]);
 
+  // Memoize restaurant data for markers to avoid unnecessary re-renders
+  const restaurantMarkerData = useMemo(() => {
+    return restaurants
+      .filter((r) => r.geometry?.lat && r.geometry?.lng)
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        cuisine: r.cuisine,
+        budget: r.budget,
+        rating: r.rating,
+        totalReviews: r.totalReviews,
+        lat: r.geometry!.lat,
+        lng: r.geometry!.lng,
+      }));
+  }, [restaurants]);
+
+  // Memoize center calculation
+  const mapCenter = useMemo(() => {
+    return getCenterFromRestaurants(restaurants) ?? DEFAULT_CENTER;
+  }, [restaurants]);
+
   // Initialize map when loaded
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
@@ -112,7 +133,7 @@ export default function MapView({
       Animation: { DROP: number };
     };
 
-    const center = getCenterFromRestaurants(restaurants) ?? DEFAULT_CENTER;
+    const center = mapCenter;
 
     mapInstanceRef.current = new gm.Map(mapRef.current, {
       center,
@@ -127,13 +148,12 @@ export default function MapView({
       fullscreenControl: true,
     });
 
-    restaurants.forEach((restaurant) => {
-      if (!restaurant.geometry?.lat || !restaurant.geometry?.lng) return;
+    restaurantMarkerData.forEach((restaurant) => {
 
       const marker = new gm.Marker({
         position: {
-          lat: restaurant.geometry.lat,
-          lng: restaurant.geometry.lng,
+          lat: restaurant.lat,
+          lng: restaurant.lng,
         },
         map: mapInstanceRef.current,
         title: restaurant.name,
@@ -163,10 +183,8 @@ export default function MapView({
 
     if (restaurants.length > 1) {
       const bounds = new gm.LatLngBounds();
-      restaurants.forEach((r) => {
-        if (r.geometry?.lat && r.geometry?.lng) {
-          bounds.extend({ lat: r.geometry.lat, lng: r.geometry.lng });
-        }
+      restaurantMarkerData.forEach((r) => {
+        bounds.extend({ lat: r.lat, lng: r.lng });
       });
       (mapInstanceRef.current as { fitBounds: (b: unknown, p: number) => void }).fitBounds(bounds, 50);
     }
@@ -184,7 +202,7 @@ export default function MapView({
     return () => {
       window.removeEventListener("selectRestaurant", handleSelectRestaurant);
     };
-  }, [mapLoaded, restaurants, isDark, onSelectRestaurant, accent]);
+  }, [mapLoaded, restaurantMarkerData, mapCenter, isDark, onSelectRestaurant, accent, restaurants]);
 
   if (mapError) {
     return (

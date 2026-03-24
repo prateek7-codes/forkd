@@ -21,15 +21,15 @@ export default function SelectionConfirmModal({
   darkMode,
 }: Props) {
   const [downloading, setDownloading] = useState(false);
-  const [googleCalLink, setGoogleCalLink] = useState<string | null>(null);
+  const [reminder, setReminder] = useState<"none" | "30min" | "1hour" | "1day">("1hour");
 
   const isDark = darkMode;
-  const bg = isDark ? "#0f0f10" : "#fdf8f0";
   const cardBg = isDark ? "#1a1a1d" : "white";
   const textPrimary = isDark ? "#f5f5f5" : "#2d2420";
   const textSecondary = isDark ? "#9ca3af" : "#8a5a40";
   const accent = isDark ? "#ff8a3d" : "#c44a20";
   const border = isDark ? "#2d2d30" : "#f0e0cc";
+  const inputBg = isDark ? "#252528" : "#f5e8d8";
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -44,6 +44,7 @@ export default function SelectionConfirmModal({
         timeSlot: timeSlot || "dinner-19",
         groupName,
         members: members.map(m => m.name).join(", "),
+        reminder,
       });
       const res = await fetch(`/api/calendar-event?${params}`);
       const data = await res.json() as { ics?: string };
@@ -72,12 +73,13 @@ export default function SelectionConfirmModal({
         restaurantId: restaurant.id,
         timeSlot: timeSlot || "dinner-19",
         groupName,
+        reminder,
       });
-      const res = await fetch(`/api/calendar-event?${params}`);
-      const data = await res.json() as { googleCalendarUrl?: string };
+      const res = await fetch(`/api/calendar-event?${params}&format=google`);
+      const data = await res.json() as { url?: string };
       
-      if (data.googleCalendarUrl) {
-        window.open(data.googleCalendarUrl, "_blank");
+      if (data.url) {
+        window.open(data.url, "_blank");
       }
     } catch (err) {
       console.error("Failed to open Google Calendar:", err);
@@ -86,7 +88,17 @@ export default function SelectionConfirmModal({
 
   const handleWhatsAppShare = () => {
     const timeLabel = TIME_SLOTS.find(s => s.value === timeSlot)?.label || "Dinner";
-    const message = `🍽️ We're going to ${restaurant.name}!\n\n📍 ${restaurant.area}, ${restaurant.city}\n🕕 ${timeLabel}\n👥 ${members.map(m => m.name).join(", ")}\n\nSelected via Forkd!`;
+    const reminderText = reminder === "none" ? "" : 
+      reminder === "30min" ? "\n🔔 30-minute reminder set" :
+      reminder === "1hour" ? "\n🔔 1-hour reminder set" :
+      "\n🔔 Day-before reminder set";
+    const message = `🍽️ We're going to ${restaurant.name}!
+
+📍 ${restaurant.area}, ${restaurant.city}
+🕕 ${timeLabel}
+👥 ${members.map(m => m.name).join(", ")}${reminderText}
+
+Selected via Forkd!`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
   };
 
@@ -141,7 +153,7 @@ export default function SelectionConfirmModal({
           {/* Details */}
           <div
             className="rounded-2xl p-4 mb-4"
-            style={{ background: isDark ? "#252528" : "#fdf4f0", border: `1px solid ${border}` }}
+            style={{ background: inputBg, border: `1px solid ${border}` }}
           >
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -165,12 +177,40 @@ export default function SelectionConfirmModal({
             </div>
           </div>
 
+          {/* Reminder Options */}
+          <div className="mb-4">
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: textSecondary }}>
+              🔔 Reminder
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { value: "none", label: "None" },
+                { value: "30min", label: "30 min" },
+                { value: "1hour", label: "1 hour" },
+                { value: "1day", label: "1 day" },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setReminder(opt.value as typeof reminder)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+                  style={
+                    reminder === opt.value
+                      ? { background: accent, color: "white" }
+                      : { background: inputBg, color: textPrimary, border: `1px solid ${border}` }
+                  }
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Actions */}
           <div className="space-y-2">
             <button
               onClick={handleGoogleCalendar}
               className="w-full flex items-center gap-3 p-3 rounded-2xl transition-all"
-              style={{ background: isDark ? "#252528" : "white", border: `1px solid ${border}` }}
+              style={{ background: inputBg, border: `1px solid ${border}` }}
             >
               <span className="text-xl">📅</span>
               <span className="text-sm font-semibold" style={{ color: textPrimary }}>
@@ -182,7 +222,7 @@ export default function SelectionConfirmModal({
               onClick={handleDownloadICS}
               disabled={downloading}
               className="w-full flex items-center gap-3 p-3 rounded-2xl transition-all"
-              style={{ background: isDark ? "#252528" : "white", border: `1px solid ${border}` }}
+              style={{ background: inputBg, border: `1px solid ${border}` }}
             >
               <span className="text-xl">📥</span>
               <span className="text-sm font-semibold" style={{ color: textPrimary }}>

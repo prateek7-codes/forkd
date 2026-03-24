@@ -33,6 +33,12 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 - [x] **Selection Confirmation** — post-vote flow with save to calendar options
 - [x] **Mobile Bottom Nav** — fixed bottom navigation on mobile devices
 - [x] **Micro-interactions** — card hover scale, button press scale, animated transitions
+- [x] **Deduplication** — fuzzy matching (Levenshtein) to remove duplicates between AI and Google results
+- [x] **Smart Ranking** — scoring formula: score = (rating*0.4) + (log(reviews)*0.2) + (ai_score*0.3) + (votes*0.1)
+- [x] **Reminder Option** — toggle for None/30min/1hour/1day before saving to calendar
+- [x] **Improved Empty States** — friendly messages with suggested actions
+- [x] **Google Place Photos** — uses Google Place Photos API with gradient fallback
+- [x] **Map Memoization** — memoized marker data to optimize re-renders
 
 ## Current Structure
 
@@ -96,3 +102,4 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 |------|---------|
 | 2026-03-24 | Full Forkd app built |
 | 2026-03-24 | Added Google Places, dark mode, badges, calendar export, mobile nav |
+| 2026-03-24 | Added deduplication, smart ranking, reminder option, empty states, photo API, map memoization |

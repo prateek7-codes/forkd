@@ -62,8 +62,6 @@ export async function POST(request: NextRequest) {
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
 
-    console.log(`[DEBUG] Suggest API called with city: "${city}", area: "${area}"`);
-
     // If no API key, return curated fallback data
     if (!apiKey) {
       return NextResponse.json(
@@ -73,7 +71,6 @@ export async function POST(request: NextRequest) {
     }
 
     const prompt = buildPrompt(city, area);
-    console.log(`[DEBUG] Generated prompt for city: ${city}, area: ${area}`);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",

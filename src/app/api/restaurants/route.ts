@@ -300,8 +300,6 @@ async function fetchFromOSM(city: string, area?: string): Promise<any[]> {
   let overpassQuery: string;
   
   if (areaCenter) {
-    console.log(`[OSM] Using radius search: ${normalizedArea} at (${areaCenter.lat}, ${areaCenter.lon})`);
-    
     overpassQuery = `
 [out:json][timeout:30];
 (
@@ -311,8 +309,6 @@ async function fetchFromOSM(city: string, area?: string): Promise<any[]> {
 out center tags 25;
 `;
   } else {
-    console.log(`[OSM] Using city-wide search for: ${city}`);
-    
     overpassQuery = `
 [out:json][timeout:30];
 area["name"="${city}"]["admin_level"~"4|6|8"]->.city;
@@ -345,16 +341,12 @@ out center tags 25;
     elements = elements.slice(0, 20);
     
     if (areaCenter && elements.length > 0) {
-      console.log(`[OSM] Filtering ${elements.length} results within 5km of ${normalizedArea}`);
-      
       elements = elements.filter((e: any) => {
         if (e.lat && e.lon) {
           return isWithinRadius(e.lat, e.lon, areaCenter, 5);
         }
         return true;
       });
-      
-      console.log(`[OSM] After filtering: ${elements.length} restaurants in ${normalizedArea}`);
     }
     
     return elements;
@@ -434,6 +426,25 @@ function enrichRestaurant(
     ["Large Groups", "Live Music", "Rooftop"],
   ];
 
+  const reviewTemplates = [
+    { text: "Great food and excellent service. Will definitely come back!", rating: 5 },
+    { text: "Good ambiance and tasty food. A bit pricey but worth it.", rating: 4 },
+    { text: "Amazing experience! The dishes were flavorful and fresh.", rating: 5 },
+    { text: "Nice place for family dinners. Food was good, service could be faster.", rating: 4 },
+    { text: "Best restaurant in the area! Highly recommended.", rating: 5 },
+    { text: "Decent food, cozy atmosphere. Good for casual dining.", rating: 3 },
+    { text: "Fantastic flavors! Staff was very accommodating.", rating: 5 },
+    { text: "Pretty good overall. Would visit again for special occasions.", rating: 4 },
+  ];
+
+  const selectedReviews = [
+    reviewTemplates[Math.floor(rand() * reviewTemplates.length)],
+    reviewTemplates[Math.floor(rand() * reviewTemplates.length)],
+  ].filter((r, i, a) => a.findIndex(x => x.text === r.text) === i);
+
+  const reviewerNames = ["Priya S.", "Amit K.", "Rahul M.", "Sneha R.", "Vikram J.", "Anjali P.", "Deepak T.", "Neha W."];
+  const reviewAvatars = ["👩", "👨", "👩‍🦰", "👨‍🦱", "👩‍🦳", "👨‍🦲", "🧑", "👱"];
+
   const isPopular = rating > 4.3 && reviews > 1000;
   const imageKey = cuisineKey in UNSPLASH_IMAGES ? cuisineKey : "default";
 
@@ -449,7 +460,13 @@ function enrichRestaurant(
     description: `A popular dining destination in ${city}, known for its excellent ${cuisine.toLowerCase()} cuisine and welcoming atmosphere.`,
     topDishes: selectedDishes,
     tags: tagOptions[Math.floor(rand() * tagOptions.length)],
-    reviews: [],
+    reviews: selectedReviews.map((r, i) => ({
+      author: reviewerNames[Math.floor(rand() * reviewerNames.length)],
+      avatar: reviewAvatars[Math.floor(rand() * reviewAvatars.length)],
+      rating: r.rating,
+      text: r.text,
+      date: `${Math.floor(1 + rand() * 12)} months ago`,
+    })),
     imageColor: useUnsplash ? "" : COLORS[index % COLORS.length],
     type: "ai",
     badges: isPopular ? ["Popular"] : (index === 0 ? ["AI Suggested"] : undefined),
@@ -531,19 +548,15 @@ export async function POST(request: NextRequest) {
     }
 
     const cacheKey = `${city.toLowerCase()}_${area.toLowerCase() || "all"}`;
-    console.log(`[RESTAURANTS API] Request for city: ${city}, area: ${area}, cacheKey: ${cacheKey}`);
     
     const cached = getFromCache(cacheKey);
     if (cached) {
-      console.log(`[RESTAURANTS API] Returning cached results for ${cacheKey}`);
       return NextResponse.json({ restaurants: cached, source: "cache" });
     }
 
-    console.log(`[RESTAURANTS API] Fetching from OSM for ${city}...`);
     let osmData = await fetchFromOSM(city, area);
     
     if (osmData.length === 0) {
-      console.log(`[RESTAURANTS API] No OSM data, trying broader search for ${city}...`);
       const fallbackQuery = `
 [out:json][timeout:30];
 area["name"="${city}"]->.city;
@@ -566,8 +579,6 @@ out center tags 25;
         console.error("[RESTAURANTS API] Fallback OSM fetch failed");
       }
     }
-
-    console.log(`[RESTAURANTS API] Found ${osmData.length} restaurants from OSM`);
 
     if (osmData.length === 0) {
       return NextResponse.json(
@@ -594,7 +605,6 @@ out center tags 25;
     }
 
     setCache(cacheKey, osmtpRestaurants);
-    console.log(`[RESTAURANTS API] Cached and returning ${osmtpRestaurants.length} restaurants`);
 
     return NextResponse.json({ 
       restaurants: osmtpRestaurants,

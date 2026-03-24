@@ -229,8 +229,6 @@ export default function DiscoverTab({
     const normalizedArea = area?.trim() || "";
     const cacheKey = `${normalizedCity.toLowerCase()}_${normalizedArea.toLowerCase() || "all"}`;
     
-    console.log(`[DEBUG] Generating fallback for city: ${normalizedCity}, area: ${normalizedArea}, cacheKey: ${cacheKey}`);
-    
     const CITY_RESTAURANTS: Record<string, { names: string[], cuisines: string[], areas: string[], dishes: string[][] }> = {
       "hyderabad": {
         names: ["Paradise", "Bawarchi", "Shah Ghouse", "Hotel Shadab", "Ch尤其是", "Minerva", "Grand Hotel", "Nice", "Kamat", "4M", "Alpha", "D replicate", "Asian", "Raffah", "M均有"],

@@ -39,6 +39,7 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 - [x] **Improved Empty States** — friendly messages with suggested actions
 - [x] **Google Place Photos** — uses Google Place Photos API with gradient fallback
 - [x] **Map Memoization** — memoized marker data to optimize re-renders
+- [x] **Discover UI Cleanup** — unified search system (city/area/restaurant), removed duplicate city pills and old AI search bar, improved source switcher labels, added "Showing results for X" context header, fixed empty state to show "Start by entering a city..."
 
 ## Current Structure
 
@@ -103,3 +104,4 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 | 2026-03-24 | Full Forkd app built |
 | 2026-03-24 | Added Google Places, dark mode, badges, calendar export, mobile nav |
 | 2026-03-24 | Added deduplication, smart ranking, reminder option, empty states, photo API, map memoization |
+| 2026-03-24 | Discover UI cleanup: unified search (city/area/name), removed duplicate UI, improved source labels, added search context header, fixed empty state |

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { type Restaurant } from "@/lib/data";
 import { CUISINES, TAGS, BUDGETS, type Budget, type Tag } from "@/lib/data";
 import RestaurantCard from "@/components/RestaurantCard";
-import { getRestaurantImage, sortByRanking, deduplicateRestaurants, useDebounce } from "@/lib/utils";
+import { sortByRanking, deduplicateRestaurants } from "@/lib/utils";
 import { type SourceFilter } from "@/app/page";
 
 interface Props {
@@ -20,7 +20,7 @@ interface Props {
   darkMode: boolean;
 }
 
-const CITIES = ["All", "Mumbai", "Delhi", "Bangalore", "London"];
+const CITIES = ["Mumbai", "Delhi", "Bangalore", "London"];
 
 export default function DiscoverTab({
   restaurants,
@@ -33,30 +33,22 @@ export default function DiscoverTab({
   onViewModeChange,
   darkMode,
 }: Props) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCity, setSelectedCity] = useState("All");
-  const [selectedArea, setSelectedArea] = useState("All");
-  
-  // Debounce search to avoid unnecessary re-renders
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const [searchCity, setSearchCity] = useState("");
+  const [searchArea, setSearchArea] = useState("");
+  const [searchName, setSearchName] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
 
   const isDark = darkMode;
-  const bg = isDark ? "#0f0f10" : "#fdf8f0";
   const cardBg = isDark ? "#1a1a1d" : "white";
   const textPrimary = isDark ? "#f5f5f5" : "#2d2420";
   const textSecondary = isDark ? "#9ca3af" : "#8a5a40";
   const accent = isDark ? "#ff8a3d" : "#c44a20";
   const border = isDark ? "#2d2d30" : "#f0d8c4";
   const inputBg = isDark ? "#1a1a1d" : "white";
+  
   const [selectedCuisine, setSelectedCuisine] = useState("All");
   const [selectedBudgets, setSelectedBudgets] = useState<Budget[]>([]);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
-  const [aiCity, setAiCity] = useState("");
-  // Debounce AI city input
-  const debouncedAiCity = useDebounce(aiCity, 500);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState("");
-  const [aiResults, setAiResults] = useState<Restaurant[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
   const toggleBudget = (b: Budget) => {
@@ -71,98 +63,74 @@ export default function DiscoverTab({
     );
   };
 
-  const clearFilters = () => {
-    setSearchQuery("");
-    setSelectedCity("All");
+  const handleSearch = () => {
+    if (searchCity.trim()) {
+      setHasSearched(true);
+    }
+  };
+
+  const clearAll = () => {
+    setSearchCity("");
+    setSearchArea("");
+    setSearchName("");
     setSelectedCuisine("All");
     setSelectedBudgets([]);
     setSelectedTags([]);
+    setHasSearched(false);
   };
 
-   const activeFilterCount =
-    (selectedCity !== "All" ? 1 : 0) +
-    (selectedArea !== "All" ? 1 : 0) +
+  const activeFilterCount =
     (selectedCuisine !== "All" ? 1 : 0) +
     selectedBudgets.length +
     selectedTags.length;
 
-  // Calculate vote counts for each restaurant
-  const voteCounts: Record<string, number> = {};
-  // Votes would need to be passed as prop or accessed from context
-  // For now, we'll skip vote counting in ranking as it requires prop drilling
-
   const filteredAndRanked = useMemo(() => {
-    const base = aiResults.length > 0 ? aiResults : restaurants;
-    const filtered = base.filter((r) => {
-      // Source filter
+    if (!hasSearched) return [];
+
+    const filtered = restaurants.filter((r) => {
       if (sourceFilter !== "all" && r.type !== sourceFilter) return false;
       
-      if (
-        debouncedSearch &&
-        !r.name.toLowerCase().includes(debouncedSearch.toLowerCase()) &&
-        !r.description.toLowerCase().includes(debouncedSearch.toLowerCase()) &&
-        !r.cuisine.toLowerCase().includes(debouncedSearch.toLowerCase())
-      )
-        return false;
-      if (selectedCity !== "All" && r.city !== selectedCity) return false;
-      if (selectedArea !== "All" && r.area !== selectedArea) return false;
-      if (selectedCuisine !== "All" && r.cuisine !== selectedCuisine)
-        return false;
-      if (
-        selectedBudgets.length > 0 &&
-        !selectedBudgets.includes(r.budget)
-      )
-        return false;
-      if (
-        selectedTags.length > 0 &&
-        !selectedTags.some((t) => r.tags.includes(t))
-      )
-        return false;
+      const cityMatch = searchCity.trim() === "" || 
+        r.city.toLowerCase().includes(searchCity.toLowerCase());
+      const areaMatch = searchArea.trim() === "" || 
+        r.area.toLowerCase().includes(searchArea.toLowerCase());
+      const nameMatch = searchName.trim() === "" ||
+        r.name.toLowerCase().includes(searchName.toLowerCase()) ||
+        r.cuisine.toLowerCase().includes(searchName.toLowerCase());
+      
+      if (!cityMatch || !areaMatch || !nameMatch) return false;
+      
+      if (selectedCuisine !== "All" && r.cuisine !== selectedCuisine) return false;
+      if (selectedBudgets.length > 0 && !selectedBudgets.includes(r.budget)) return false;
+      if (selectedTags.length > 0 && !selectedTags.some((t) => r.tags.includes(t))) return false;
+      
       return true;
     });
     
-    // Apply deduplication to remove duplicates between AI and Google results
     const deduplicated = deduplicateRestaurants(filtered);
-    
-    // Apply smart ranking (without vote count for now)
     return sortByRanking(deduplicated, {});
   }, [
     restaurants,
-    aiResults,
-    debouncedSearch,
-    selectedCity,
-    selectedArea,
+    hasSearched,
+    searchCity,
+    searchArea,
+    searchName,
     selectedCuisine,
     selectedBudgets,
     selectedTags,
     sourceFilter,
   ]);
 
-  const fetchAiSuggestions = async () => {
-    if (!aiCity.trim()) return;
-    setAiLoading(true);
-    setAiError("");
-    setAiResults([]);
-    try {
-      const res = await fetch("/api/suggest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ city: aiCity }),
-      });
-      if (!res.ok) throw new Error("Failed to fetch suggestions");
-      const data = await res.json() as { restaurants: Restaurant[] };
-      setAiResults(data.restaurants);
-      setSelectedCity("All");
-    } catch {
-      setAiError("Could not fetch AI suggestions. Showing existing results.");
-    } finally {
-      setAiLoading(false);
-    }
+  const getSearchContext = () => {
+    const parts: string[] = [];
+    if (searchArea.trim()) parts.push(searchArea.trim());
+    if (searchCity.trim()) parts.push(searchCity.trim());
+    return parts.join(", ") || (searchCity.trim() || "");
   };
 
   return (
     <div>
-      {/* AI Search Bar */}
+      {/* Unified Search Input Group */}
       <div
         className="rounded-2xl p-4 mb-5"
         style={{
@@ -170,63 +138,71 @@ export default function DiscoverTab({
         }}
       >
         <p
-          className="text-xs font-semibold uppercase tracking-widest mb-2"
+          className="text-xs font-semibold uppercase tracking-widest mb-3"
           style={{ color: "#f0a888" }}
         >
-          AI Restaurant Discovery
+          Find Restaurants
         </p>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={aiCity}
-            onChange={(e) => setAiCity(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && fetchAiSuggestions()}
-            placeholder="Enter any city (e.g. Tokyo, Paris, NYC...)"
-            className="flex-1 rounded-xl px-4 py-2.5 text-sm outline-none"
-            style={{
-              background: "rgba(255,255,255,0.12)",
-              color: "white",
-              border: "1px solid rgba(255,255,255,0.2)",
-            }}
-          />
-          <button
-            onClick={fetchAiSuggestions}
-            disabled={aiLoading || !aiCity.trim()}
-            className="px-4 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
-            style={{ background: "#d97706", color: "white" }}
-          >
-            {aiLoading ? (
-              <span className="flex items-center gap-2">
-                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="20 60" />
-                </svg>
-                <span className="hidden sm:inline">Finding...</span>
-              </span>
-            ) : (
-              "✨ Find"
-            )}
-          </button>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+          <div>
+            <label className="text-xs text-white/70 mb-1 block">City (required)</label>
+            <input
+              type="text"
+              value={searchCity}
+              onChange={(e) => setSearchCity(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              placeholder="e.g. Mumbai"
+              className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+              style={{
+                background: "rgba(255,255,255,0.12)",
+                color: "white",
+                border: "1px solid rgba(255,255,255,0.2)",
+              }}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-white/70 mb-1 block">Area (optional)</label>
+            <input
+              type="text"
+              value={searchArea}
+              onChange={(e) => setSearchArea(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              placeholder="e.g. Bandra"
+              className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+              style={{
+                background: "rgba(255,255,255,0.12)",
+                color: "white",
+                border: "1px solid rgba(255,255,255,0.2)",
+              }}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-white/70 mb-1 block">Restaurant (optional)</label>
+            <input
+              type="text"
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              placeholder="Search by name"
+              className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+              style={{
+                background: "rgba(255,255,255,0.12)",
+                color: "white",
+                border: "1px solid rgba(255,255,255,0.2)",
+              }}
+            />
+          </div>
         </div>
-         {aiError && (
-           <p className="text-xs mt-2" style={{ color: "#fcd34d" }}>
-             {aiError}
-           </p>
-         )}
-         {aiResults.length > 0 && (
-           <div className="flex items-center justify-between mt-2">
-             <p className="text-xs" style={{ color: "#f0a888" }}>
-               Showing {aiResults.length} AI suggestions for &ldquo;{aiCity}&rdquo;
-               {selectedArea !== "All" ? ` in ${selectedArea}` : ""}
-             </p>
-             <button
-               onClick={() => setAiResults([])}
-               className="text-xs underline"
-               style={{ color: "#f0a888" }}
-             >
-               Clear
-             </button>
-           </div>
-         )}
+        
+        <button
+          onClick={handleSearch}
+          disabled={!searchCity.trim()}
+          className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
+          style={{ background: "#d97706", color: "white" }}
+        >
+          Find Restaurants
+        </button>
       </div>
 
       {/* Source Switcher + View Toggle */}
@@ -234,14 +210,14 @@ export default function DiscoverTab({
         <div className="flex gap-1 p-1 rounded-xl" style={{ background: isDark ? "#1a1a1d" : "#f5e8d8" }}>
           {[
             { id: "all" as SourceFilter, label: "All", icon: "🍽️" },
-            { id: "ai" as SourceFilter, label: "AI Picks", icon: "🤖" },
-            { id: "google" as SourceFilter, label: "Popular", icon: "🌍" },
+            { id: "ai" as SourceFilter, label: "AI Picks (Smart)", icon: "🤖" },
+            { id: "google" as SourceFilter, label: "Popular (Top)", icon: "🌍" },
             { id: "curated" as SourceFilter, label: "Curated", icon: "⭐" },
           ].map((opt) => (
             <button
               key={opt.id}
               onClick={() => onSourceFilterChange(opt.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap"
               style={
                 sourceFilter === opt.id
                   ? { background: accent, color: "white" }
@@ -284,40 +260,15 @@ export default function DiscoverTab({
         </div>
       </div>
 
-      {/* Search + Filter bar */}
+      {/* Filter Toggle */}
       <div className="flex gap-2 mb-4">
-        <div className="flex-1 relative">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-            style={{ color: textSecondary }}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.35-4.35" />
-          </svg>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search restaurants..."
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none"
-            style={{
-              background: inputBg,
-              border: `1px solid ${border}`,
-              color: textPrimary,
-            }}
-          />
-        </div>
         <button
           onClick={() => setShowFilters((v) => !v)}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all relative"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
           style={{
-            background: showFilters ? "#c44a20" : "white",
-            color: showFilters ? "white" : "#2d2420",
-            border: "1px solid #f0d8c4",
+            background: showFilters ? accent : "white",
+            color: showFilters ? "white" : textPrimary,
+            border: `1px solid ${border}`,
           }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -326,8 +277,8 @@ export default function DiscoverTab({
           Filters
           {activeFilterCount > 0 && (
             <span
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
-              style={{ background: "#c44a20" }}
+              className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+              style={{ background: showFilters ? "white" : accent, color: showFilters ? accent : "white" }}
             >
               {activeFilterCount}
             </span>
@@ -339,38 +290,14 @@ export default function DiscoverTab({
       {showFilters && (
         <div
           className="rounded-2xl p-4 mb-4"
-          style={{ background: "white", border: "1px solid #f0d8c4" }}
+          style={{ background: cardBg, border: `1px solid ${border}` }}
         >
-          {/* City */}
           <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#a06040" }}>
-              City
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {CITIES.map((city) => (
-                <button
-                  key={city}
-                  onClick={() => setSelectedCity(city)}
-                  className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
-                  style={
-                    selectedCity === city
-                      ? { background: "#c44a20", color: "white" }
-                      : { background: "#f5e8d8", color: "#6b3a20" }
-                  }
-                >
-                  {city}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Cuisine */}
-          <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#a06040" }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: accent }}>
               Cuisine
             </p>
             <div className="flex flex-wrap gap-2">
-              {CUISINES.map((c) => (
+              {["All", ...CUISINES].map((c) => (
                 <button
                   key={c}
                   onClick={() => setSelectedCuisine(c)}
@@ -378,7 +305,7 @@ export default function DiscoverTab({
                   style={
                     selectedCuisine === c
                       ? { background: "#d97706", color: "white" }
-                      : { background: "#f5e8d8", color: "#6b3a20" }
+                      : { background: isDark ? "#252528" : "#f5e8d8", color: textSecondary }
                   }
                 >
                   {c}
@@ -387,9 +314,8 @@ export default function DiscoverTab({
             </div>
           </div>
 
-          {/* Budget */}
           <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#a06040" }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: accent }}>
               Budget
             </p>
             <div className="flex gap-2">
@@ -401,7 +327,7 @@ export default function DiscoverTab({
                   style={
                     selectedBudgets.includes(b)
                       ? { background: "#059669", color: "white" }
-                      : { background: "#f5e8d8", color: "#6b3a20" }
+                      : { background: isDark ? "#252528" : "#f5e8d8", color: textSecondary }
                   }
                 >
                   {b}
@@ -410,53 +336,8 @@ export default function DiscoverTab({
             </div>
           </div>
 
-          {/* Area */}
-          <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#a06040" }}>
-              Area
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                key="All"
-                onClick={() => setSelectedArea("All")}
-                className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
-                style={
-                  selectedArea === "All"
-                    ? { background: "#c44a20", color: "white" }
-                    : { background: "#f5e8d8", color: "#6b3a20" }
-                }
-              >
-                All Areas
-              </button>
-              {/* Add some common areas for demonstration */}
-              <button
-                key="Bandra"
-                onClick={() => setSelectedArea("Bandra")}
-                className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
-                style={
-                  selectedArea === "Bandra"
-                    ? { background: "#c44a20", color: "white" }
-                    : { background: "#f5e8d8", color: "#6b3a20" }
-                }
-              >
-                Bandra
-              </button>
-              <button
-                key="Connaught Place"
-                onClick={() => setSelectedArea("Connaught Place")}
-                className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
-                style={
-                  selectedArea === "Connaught Place"
-                    ? { background: "#c44a20", color: "white" }
-                    : { background: "#f5e8d8", color: "#6b3a20" }
-                }
-              >
-                Connaught Place
-              </button>
-            </div>
-          </div>
           <div className="mb-3">
-            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#a06040" }}>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: accent }}>
               Vibe / Tags
             </p>
             <div className="flex flex-wrap gap-2">
@@ -468,7 +349,7 @@ export default function DiscoverTab({
                   style={
                     selectedTags.includes(t)
                       ? { background: "#7c3aed", color: "white" }
-                      : { background: "#f5e8d8", color: "#6b3a20" }
+                      : { background: isDark ? "#252528" : "#f5e8d8", color: textSecondary }
                   }
                 >
                   {t}
@@ -479,79 +360,85 @@ export default function DiscoverTab({
 
           {activeFilterCount > 0 && (
             <button
-              onClick={clearFilters}
+              onClick={() => {
+                setSelectedCuisine("All");
+                setSelectedBudgets([]);
+                setSelectedTags([]);
+              }}
               className="text-sm font-medium underline"
-              style={{ color: "#c44a20" }}
+              style={{ color: accent }}
             >
-              Clear all filters
+              Clear filters
             </button>
           )}
         </div>
       )}
 
-      {/* City quick-select pills (always visible) */}
-      {!showFilters && (
-        <div className="flex gap-2 mb-5 overflow-x-auto pb-1 scrollbar-hide">
-          {CITIES.map((city) => (
-            <button
-              key={city}
-              onClick={() => setSelectedCity(city)}
-              className="flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-all"
-              style={
-                selectedCity === city
-                  ? { background: "#c44a20", color: "white" }
-                  : { background: "white", color: "#6b3a20", border: "1px solid #f0d8c4" }
-              }
-            >
-              {city === "All" ? "🌍 All" : city}
-            </button>
-          ))}
+      {/* Search Context Header */}
+      {hasSearched && (
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm font-medium" style={{ color: textSecondary }}>
+            {filteredAndRanked.length > 0
+              ? `Showing results for "${getSearchContext()}"`
+              : `No results for "${getSearchContext()}"`}
+          </p>
+          {shortlist.length > 0 && (
+            <p className="text-xs" style={{ color: accent }}>
+              {shortlist.length} shortlisted
+            </p>
+          )}
         </div>
       )}
 
-       {/* Results count */}
-       <div className="flex items-center justify-between mb-4">
-         <p className="text-sm font-medium" style={{ color: "#8a5a40" }}>
-           {filteredAndRanked.length} restaurant{filteredAndRanked.length !== 1 ? "s" : ""}
-           {selectedCity !== "All" && selectedArea !== "All" ? ` in ${selectedArea}, ${selectedCity}` : 
-            selectedCity !== "All" ? ` in ${selectedCity}` : 
-            selectedArea !== "All" ? ` in ${selectedArea}` : ""}
-         </p>
-         {shortlist.length > 0 && (
-           <p className="text-xs" style={{ color: "#a06040" }}>
-             {shortlist.length} shortlisted
-           </p>
-         )}
-       </div>
-
-       {/* Restaurant grid */}
-       {filteredAndRanked.length === 0 ? (
-         <div
-           className="rounded-2xl p-12 text-center"
-           style={{ background: "white", border: "1px solid #f0d8c4" }}
-         >
-           <div className="text-4xl mb-3">🍽️</div>
-           <p className="font-semibold text-lg mb-1" style={{ color: "#2d2420" }}>
-             No restaurants found
-           </p>
-           <p className="text-sm" style={{ color: "#8a5a40" }}>
-             Try adjusting your filters or search a new city with AI
-           </p>
-         </div>
-       ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredAndRanked.map((restaurant: Restaurant, index: number) => (
-              <RestaurantCard
-                key={restaurant.id}
-                restaurant={restaurant}
-                isShortlisted={shortlist.includes(restaurant.id)}
-                onToggleShortlist={() => onToggleShortlist(restaurant.id)}
-                onSelect={() => onSelectRestaurant(restaurant)}
-                isBestPick={index === 0}
-              />
-            ))}
-          </div>
-       )}
+      {/* Empty / Default State */}
+      {!hasSearched ? (
+        <div
+          className="rounded-2xl p-12 text-center"
+          style={{ background: cardBg, border: `1px solid ${border}` }}
+        >
+          <div className="text-5xl mb-4">🍽️</div>
+          <p className="font-semibold text-lg mb-2" style={{ color: textPrimary }}>
+            Start by entering a city to discover restaurants
+          </p>
+          <p className="text-sm" style={{ color: textSecondary }}>
+            Try Mumbai, Delhi, Bangalore, or London
+          </p>
+        </div>
+      ) : filteredAndRanked.length === 0 ? (
+        <div
+          className="rounded-2xl p-12 text-center"
+          style={{ background: cardBg, border: `1px solid ${border}` }}
+        >
+          <div className="text-4xl mb-3">😕</div>
+          <p className="font-semibold text-lg mb-2" style={{ color: textPrimary }}>
+            No restaurants found
+          </p>
+          <p className="text-sm mb-4" style={{ color: textSecondary }}>
+            Try a different city or adjust your filters
+          </p>
+          <button
+            onClick={clearAll}
+            className="px-4 py-2 rounded-xl text-sm font-semibold"
+            style={{ background: accent, color: "white" }}
+          >
+            Start New Search
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {filteredAndRanked.map((restaurant: Restaurant, index: number) => (
+            <RestaurantCard
+              key={restaurant.id}
+              restaurant={restaurant}
+              isShortlisted={shortlist.includes(restaurant.id)}
+              onToggleShortlist={() => onToggleShortlist(restaurant.id)}
+              onSelect={() => onSelectRestaurant(restaurant)}
+              isBestPick={index === 0}
+              darkMode={darkMode}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

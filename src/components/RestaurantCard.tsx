@@ -16,13 +16,13 @@ interface Props {
 
 function StarRating({ rating }: { rating: number }) {
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5">
       <div className="flex">
         {[1, 2, 3, 4, 5].map((i) => (
           <svg
             key={i}
-            width="12"
-            height="12"
+            width="14"
+            height="14"
             viewBox="0 0 24 24"
             fill={i <= Math.round(rating) ? "#f59e0b" : "none"}
             stroke="#f59e0b"
@@ -32,7 +32,7 @@ function StarRating({ rating }: { rating: number }) {
           </svg>
         ))}
       </div>
-      <span className="text-xs font-semibold" style={{ color: "#2d2420" }}>
+      <span className="text-sm font-semibold" style={{ color: "#1f2937" }}>
         {rating.toFixed(1)}
       </span>
     </div>
@@ -80,18 +80,18 @@ export default function RestaurantCard({
 
   return (
     <div
-      className="rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-xl relative"
+      className="rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl relative group"
       style={{
         background: cardBg,
         border: `1px solid ${border}`,
-        boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 8px rgba(196,74,32,0.06)",
+        boxShadow: isDark ? "0 2px 12px rgba(0,0,0,0.4)" : "0 4px 20px rgba(0,0,0,0.08)",
        }}
        onClick={onSelect}
     >
         {/* Best Pick Highlight */}
         {isBestPick && (
           <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between">
-            <span className="text-sm font-bold px-3 py-1.5 rounded-full shadow-lg"
+            <span className="text-sm font-bold px-4 py-2 rounded-xl shadow-lg backdrop-blur-sm"
                   style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "white" }}>
               🏆 Best pick for your group
             </span>
@@ -99,7 +99,7 @@ export default function RestaurantCard({
         )}
         {isBestPick && (
           <div className="absolute bottom-20 left-3 z-10">
-            <span className="text-xs font-medium px-2 py-1 rounded-lg shadow-md bg-yellow-100/95 text-gray-800">
+            <span className="text-xs font-medium px-3 py-1.5 rounded-lg shadow-md bg-white/95 backdrop-blur-sm text-gray-700">
               Highly rated • Great for groups
             </span>
           </div>
@@ -126,36 +126,36 @@ export default function RestaurantCard({
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
               {/* Badges */}
-              <div className="absolute top-3 left-3 flex gap-1">
+              <div className="absolute top-3 left-3 flex gap-1.5">
                 {badges?.map((badge) => (
                   <span
                     key={badge}
-                    className="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1"
-                    style={{ background: getBadgeColor(badge), color: "white" }}
+                    className="text-xs font-semibold px-2.5 py-1 rounded-lg flex items-center gap-1 backdrop-blur-sm shadow-sm"
+                    style={{ background: `${getBadgeColor(badge)}e6`, color: "white" }}
                   >
                     {getBadgeIcon(badge)} {badge}
                   </span>
                 ))}
                 {isManuallyAdded && (
                   <span
-                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                    style={{ background: "#d97706", color: "white" }}
+                    className="text-xs font-semibold px-2.5 py-1 rounded-lg backdrop-blur-sm shadow-sm"
+                    style={{ background: "#d97706e6", color: "white" }}
                   >
                     Added by you
                   </span>
                 )}
                 {type === "google" && (
                   <span
-                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                    style={{ background: "#0284c7", color: "white" }}
+                    className="text-xs font-semibold px-2.5 py-1 rounded-lg backdrop-blur-sm shadow-sm"
+                    style={{ background: "#0284c7e6", color: "white" }}
                   >
                     🌍 Popular
                   </span>
                 )}
                 {type === "ai" && (
                   <span
-                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                    style={{ background: "#7c3aed", color: "white" }}
+                    className="text-xs font-semibold px-2.5 py-1 rounded-lg backdrop-blur-sm shadow-sm"
+                    style={{ background: "#7c3aede6", color: "white" }}
                   >
                     🤖 AI
                   </span>
@@ -164,8 +164,8 @@ export default function RestaurantCard({
 
               {/* Budget badge */}
               <span
-                className="absolute top-3 right-3 text-xs font-bold px-2 py-0.5 rounded-full"
-                style={{ background: "rgba(0,0,0,0.5)", color: "white" }}
+                className="absolute top-3 right-3 text-xs font-bold px-3 py-1 rounded-lg backdrop-blur-sm shadow-md"
+                style={{ background: "rgba(0,0,0,0.6)", color: "white" }}
               >
                 {budget}
               </span>
@@ -198,7 +198,7 @@ export default function RestaurantCard({
               </span>
             </div>
             <span
-              className="text-xs font-medium px-2 py-0.5 rounded-full"
+              className="text-xs font-medium px-3 py-1 rounded-lg"
               style={{ background: isDark ? "#252528" : "#fdf4f0", color: accent, border: `1px solid ${border}` }}
             >
               {cuisine}
@@ -211,13 +211,13 @@ export default function RestaurantCard({
               e.stopPropagation();
               onToggleShortlist();
             }}
-            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-95 hover:scale-110"
+            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 active:scale-90 hover:scale-105"
             style={
               isShortlisted
                 ? { 
                     background: accent, 
                     color: "white",
-                    boxShadow: "0 2px 8px rgba(196,74,32,0.4)",
+                    boxShadow: "0 4px 12px rgba(196,74,32,0.4)",
                   }
                 : {
                     background: isDark ? "#252528" : "#fdf4f0",
@@ -228,8 +228,8 @@ export default function RestaurantCard({
             title={isShortlisted ? "Remove from shortlist" : "Add to shortlist"}
           >
             <svg
-              width="20"
-              height="20"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill={isShortlisted ? "currentColor" : "none"}
               stroke="currentColor"

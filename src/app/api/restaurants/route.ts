@@ -30,7 +30,47 @@ const globalCuisines = [
   "Thai", "Korean", "Mediterranean", "Continental", "Seafood", "Cafe"
 ];
 
-const areaCoords: Record<string, { lat: number; lon: number }> = {
+const areaCoordsCache: Map<string, { lat: number; lon: number }> = new Map();
+
+async function getAreaCoordinates(area: string, city: string): Promise<{ lat: number; lon: number } | null> {
+  const cacheKey = `${area.toLowerCase()}_${city.toLowerCase()}`;
+  
+  if (areaCoordsCache.has(cacheKey)) {
+    return areaCoordsCache.get(cacheKey)!;
+  }
+  
+  const searchQuery = encodeURIComponent(`${area}, ${city}`);
+  
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${searchQuery}&format=json&limit=1`,
+      {
+        headers: {
+          "User-Agent": "ForkdApp/1.0",
+        },
+      }
+    );
+    
+    if (!response.ok) return null;
+    
+    const data = await response.json();
+    
+    if (data && data.length > 0) {
+      const result = {
+        lat: parseFloat(data[0].lat),
+        lon: parseFloat(data[0].lon),
+      };
+      areaCoordsCache.set(cacheKey, result);
+      return result;
+    }
+  } catch {
+    return null;
+  }
+  
+  return null;
+}
+
+const fallbackAreaCoords: Record<string, { lat: number; lon: number }> = {
   // Mumbai areas
   "bandra": { lat: 19.0596, lon: 72.8295 },
   "bandra west": { lat: 19.0596, lon: 72.8295 },
@@ -295,7 +335,15 @@ function setCache(key: string, data: Restaurant[]): void {
 
 async function fetchFromOSM(city: string, area?: string): Promise<any[]> {
   const normalizedArea = area?.toLowerCase().trim();
-  const areaCenter = normalizedArea ? areaCoords[normalizedArea] : null;
+  
+  let areaCenter: { lat: number; lon: number } | null = null;
+  
+  if (normalizedArea) {
+    areaCenter = await getAreaCoordinates(normalizedArea, city);
+    if (!areaCenter) {
+      areaCenter = fallbackAreaCoords[normalizedArea] || null;
+    }
+  }
   
   let overpassQuery: string;
   

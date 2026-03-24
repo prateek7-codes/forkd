@@ -358,6 +358,42 @@ export default function DiscoverTab({
     }));
   };
 
+  const findBestPick = (restaurantList: Restaurant[]): Restaurant | null => {
+    if (restaurantList.length === 0) return null;
+
+    const scored = restaurantList.map((r) => {
+      let score = 0;
+      
+      score += r.rating * 20;
+      
+      if (r.totalReviews > 500) score += 15;
+      else if (r.totalReviews > 200) score += 10;
+      else if (r.totalReviews > 50) score += 5;
+      
+      if (r.tags.includes("Large Groups")) score += 25;
+      if (r.tags.includes("Family Friendly")) score += 20;
+      if (r.tags.includes("Casual")) score += 10;
+      if (r.tags.includes("Romantic")) score += 5;
+      if (r.tags.includes("Fine Dining")) score += 5;
+      if (r.tags.includes("Outdoor Seating")) score += 8;
+      if (r.tags.includes("Live Music")) score += 8;
+      if (r.tags.includes("Rooftop")) score += 10;
+      
+      if (r.budget === "$$") score += 15;
+      else if (r.budget === "$$$") score += 10;
+      else if (r.budget === "$") score += 5;
+      
+      if (r.badges?.includes("Popular")) score += 20;
+      if (r.badges?.includes("Featured")) score += 15;
+      if (r.badges?.includes("Trending")) score += 10;
+      
+      return { restaurant: r, score };
+    });
+    
+    scored.sort((a, b) => b.score - a.score);
+    return scored[0]?.restaurant || null;
+  };
+
   const filteredAndRanked = useMemo(() => {
     if (!hasSearched) return [];
 
@@ -426,6 +462,8 @@ export default function DiscoverTab({
     return parts.join(", ") || (searchCity.trim() || "");
   };
 
+  const bestPick = useMemo(() => findBestPick(filteredAndRanked), [filteredAndRanked]);
+
   return (
     <div>
       {/* Unified Search Input Group */}
@@ -454,7 +492,7 @@ export default function DiscoverTab({
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 onFocus={() => searchCity.length >= 2 && setShowAutocomplete(true)}
                 placeholder="e.g. Mumbai, Bandra"
-                className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all duration-200 focus:ring-2 focus:ring-white/30"
                 style={{
                   background: "rgba(255,255,255,0.12)",
                   color: "white",
@@ -528,7 +566,7 @@ export default function DiscoverTab({
         <button
           onClick={handleSearch}
           disabled={!searchCity.trim() || isSearching}
-          className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+          className="w-full py-3 rounded-xl text-sm font-semibold transition-all duration-300 disabled:opacity-70 flex items-center justify-center gap-2 hover:shadow-lg hover:brightness-110 active:scale-[0.98]"
           style={{ background: "#d97706", color: "white" }}
         >
           {isSearching ? (
@@ -537,10 +575,10 @@ export default function DiscoverTab({
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
-              Finding...
+              Finding places...
             </>
           ) : (
-            "Find Restaurants"
+            "Search Restaurants"
           )}
         </button>
       </div>
@@ -755,7 +793,7 @@ export default function DiscoverTab({
       })()}
 
       {/* Best Pick Highlight Section */}
-      {hasSearched && filteredAndRanked.length > 0 && filteredAndRanked[0] && (
+      {hasSearched && bestPick && (
         <div 
           className="rounded-2xl p-5 mb-6 relative overflow-hidden"
           style={{ 
@@ -776,18 +814,18 @@ export default function DiscoverTab({
               </span>
             </div>
             <h3 className="text-xl font-bold mb-1" style={{ color: "#1f2937" }}>
-              {filteredAndRanked[0].name}
+              {bestPick.name}
             </h3>
             <div className="flex items-center gap-2 mb-3">
               <span className="text-sm font-semibold" style={{ color: "#b45309" }}>
-                {filteredAndRanked[0].cuisine} • {filteredAndRanked[0].budget}
+                {bestPick.cuisine} • {bestPick.budget}
               </span>
               <span className="text-sm font-bold px-2 py-0.5 rounded-full" style={{ background: "#f59e0b", color: "white" }}>
-                ★ {filteredAndRanked[0].rating.toFixed(1)}
+                ★ {bestPick.rating.toFixed(1)}
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {filteredAndRanked[0].tags.includes("Large Groups") || filteredAndRanked[0].tags.includes("Family Friendly") ? (
+              {bestPick.tags.includes("Large Groups") || bestPick.tags.includes("Family Friendly") ? (
                 <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: "white", color: "#6b7280" }}>
                   👥 Great for groups
                 </span>
@@ -849,7 +887,7 @@ export default function DiscoverTab({
               isShortlisted={shortlist.includes(restaurant.id)}
               onToggleShortlist={() => onToggleShortlist(restaurant.id)}
               onSelect={() => onSelectRestaurant(restaurant)}
-              isBestPick={index === 0}
+              isBestPick={bestPick?.id === restaurant.id}
               darkMode={darkMode}
             />
           ))}

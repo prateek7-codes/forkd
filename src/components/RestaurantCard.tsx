@@ -11,6 +11,7 @@ interface Props {
   onSelect: () => void;
   compact?: boolean;
   darkMode?: boolean;
+  isBestPick?: boolean;
 }
 
 function StarRating({ rating }: { rating: number }) {
@@ -45,6 +46,7 @@ export default function RestaurantCard({
   onSelect,
   compact = false,
   darkMode = false,
+  isBestPick = false,
 }: Props) {
   const isDark = darkMode;
   const cardBg = isDark ? "#1a1a1d" : "white";
@@ -83,10 +85,19 @@ export default function RestaurantCard({
         background: cardBg,
         border: `1px solid ${border}`,
         boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 8px rgba(196,74,32,0.06)",
-      }}
-      onClick={onSelect}
-    >
-      {/* Image placeholder */}
+       }}
+       onClick={onSelect}
+     >
+       {/* Best Pick Highlight */}
+       {isBestPick && (
+         <div className="absolute top-3 right-3 z-10">
+           <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                 style={{ background: "#ff8a3d", color: "white" }}>
+             🏆 Best Pick
+           </span>
+         </div>
+       )}
+       {/* Image placeholder */}
       {(() => {
         const imageUrl = getRestaurantImage(restaurant);
         return (

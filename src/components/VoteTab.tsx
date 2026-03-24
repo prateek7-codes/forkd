@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { type Restaurant, type GroupMember, TIME_SLOTS } from "@/lib/data";
 import { type VoteRecord } from "@/app/page";
 
@@ -382,33 +383,36 @@ export default function VoteTab({
             )}
           </div>
 
-          {/* Winner banner */}
-          {winners.length === 1 && !isTie && votes.length > 0 && (
-            <div
-              className="rounded-2xl p-4 mb-4 flex items-center gap-3"
-              style={{
-                background: "linear-gradient(135deg, #c44a20, #d97706)",
-                color: "white",
-              }}
-            >
-              <span className="text-3xl">🏆</span>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider opacity-80">
-                  Current Leader
-                </p>
-                <p
-                  className="text-xl font-bold"
-                  style={{ fontFamily: "var(--font-display)" }}
-                >
-                  {winners[0].name}
-                </p>
-                <p className="text-xs opacity-80">
-                  {voteMap[winners[0].id]?.length ?? 0} vote{(voteMap[winners[0].id]?.length ?? 0) !== 1 ? "s" : ""}
-                  {selectedTimeSlot && ` · ${TIME_SLOTS.find((s) => s.value === selectedTimeSlot)?.label}`}
-                </p>
-              </div>
-            </div>
-          )}
+       {/* Winner banner */}
+       {winners.length === 1 && !isTie && votes.length > 0 && (
+         <motion.div
+           initial={{ opacity: 0, y: -20 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ duration: 0.5 }}
+           className="rounded-2xl p-4 mb-4 flex items-center gap-3"
+           style={{
+             background: "linear-gradient(135deg, #c44a20, #d97706)",
+             color: "white",
+           }}
+         >
+           <span className="text-3xl">🏆</span>
+           <div>
+             <p className="text-xs font-semibold uppercase tracking-wider opacity-80">
+               Current Leader
+             </p>
+             <p
+               className="text-xl font-bold"
+               style={{ fontFamily: "var(--font-display)" }}
+             >
+               {winners[0].name}
+             </p>
+             <p className="text-xs opacity-80">
+               {voteMap[winners[0].id]?.length ?? 0} vote{(voteMap[winners[0].id]?.length ?? 0) !== 1 ? "s" : ""}
+               {selectedTimeSlot && ` · ${TIME_SLOTS.find((s) => s.value === selectedTimeSlot)?.label}`}
+             </p>
+           </div>
+         </motion.div>
+       )}
 
           {isTie && votes.length > 0 && (
             <div
@@ -434,119 +438,125 @@ export default function VoteTab({
             </div>
           )}
 
-          {/* Vote bars */}
-          <div className="space-y-3 mb-6">
-            {shortlisted
-              .map((r) => ({
-                restaurant: r,
-                count: voteMap[r.id]?.length ?? 0,
-              }))
-              .sort((a, b) => b.count - a.count)
-              .map(({ restaurant, count }) => {
-                const total = votes.length;
-                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-                const isMyVote = myVote?.restaurantId === restaurant.id;
-                const isLeader = count === maxVotes && count > 0 && !isTie;
-                const voters = (voteMap[restaurant.id] ?? [])
-                  .map(getMemberById)
-                  .filter(Boolean);
+           {/* Vote bars */}
+           <div className="space-y-3 mb-6">
+             {shortlisted
+               .map((r) => ({
+                 restaurant: r,
+                 count: voteMap[r.id]?.length ?? 0,
+               }))
+               .sort((a, b) => b.count - a.count)
+               .map(({ restaurant, count }, index) => {
+                 const total = votes.length;
+                 const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                 const isMyVote = myVote?.restaurantId === restaurant.id;
+                 const isLeader = count === maxVotes && count > 0 && !isTie;
+                 const voters = (voteMap[restaurant.id] ?? [])
+                   .map(getMemberById)
+                   .filter(Boolean);
 
-                return (
-                  <div
-                    key={restaurant.id}
-                    className="rounded-2xl p-4 transition-all cursor-pointer"
-                    style={{
-                      background: isMyVote ? "#fdf4f0" : "white",
-                      border: isMyVote
-                        ? "2px solid #c44a20"
-                        : isLeader
-                        ? "2px solid #d97706"
-                        : "1px solid #f0d8c4",
-                    }}
-                    onClick={() => onSelectRestaurant(restaurant)}
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          {isLeader && (
-                            <span className="text-base">🏆</span>
-                          )}
-                          <p
-                            className="font-bold text-base"
-                            style={{
-                              fontFamily: "var(--font-display)",
-                              color: "#2d2420",
-                            }}
-                          >
-                            {restaurant.name}
-                          </p>
-                        </div>
-                        <p className="text-xs" style={{ color: "#8a5a40" }}>
-                          {restaurant.area}, {restaurant.city} · {restaurant.cuisine} · {restaurant.budget}
-                        </p>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleVote(restaurant.id);
-                        }}
-                        className="flex-shrink-0 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all"
-                        style={
-                          isMyVote
-                            ? {
-                                background: "#c44a20",
-                                color: "white",
-                              }
-                            : {
-                                background: "#f5e8d8",
-                                color: "#6b3a20",
-                              }
-                        }
-                      >
-                        {isMyVote ? "✓ Voted" : "Vote"}
-                      </button>
-                    </div>
+                 return (
+                   <motion.div
+                     key={restaurant.id}
+                     initial={{ opacity: 0, y: 20 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     transition={{ delay: index * 0.05, duration: 0.3 }}
+                     className="rounded-2xl p-4 transition-all cursor-pointer"
+                     style={{
+                       background: isMyVote ? "#fdf4f0" : "white",
+                       border: isMyVote
+                         ? "2px solid #c44a20"
+                         : isLeader
+                         ? "2px solid #d97706"
+                         : "1px solid #f0d8c4",
+                     }}
+                     onClick={() => onSelectRestaurant(restaurant)}
+                   >
+                     <div className="flex items-start justify-between gap-2 mb-2">
+                       <div>
+                         <div className="flex items-center gap-2">
+                           {isLeader && (
+                             <span className="text-base">🏆</span>
+                           )}
+                           <p
+                             className="font-bold text-base"
+                             style={{
+                               fontFamily: "var(--font-display)",
+                               color: "#2d2420",
+                             }}
+                           >
+                             {restaurant.name}
+                           </p>
+                         </div>
+                         <p className="text-xs" style={{ color: "#8a5a40" }}>
+                           {restaurant.area}, {restaurant.city} · {restaurant.cuisine} · {restaurant.budget}
+                         </p>
+                       </div>
+                       <button
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           handleVote(restaurant.id);
+                         }}
+                         className="flex-shrink-0 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all"
+                         style={
+                           isMyVote
+                             ? {
+                                 background: "#c44a20",
+                                 color: "white",
+                               }
+                             : {
+                                 background: "#f5e8d8",
+                                 color: "#6b3a20",
+                               }
+                         }
+                       >
+                         {isMyVote ? "✓ Voted" : "Vote"}
+                       </button>
+                     </div>
 
-                    {/* Vote bar */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <div
-                        className="flex-1 h-2.5 rounded-full overflow-hidden"
-                        style={{ background: "#f0d8c4" }}
-                      >
-                        <div
-                          className="h-full rounded-full transition-all duration-700"
-                          style={{
-                            width: `${pct}%`,
-                            background:
-                              isLeader
-                                ? "linear-gradient(90deg, #c44a20, #d97706)"
-                                : "#e87d54",
-                          }}
-                        />
-                      </div>
-                      <span
-                        className="text-xs font-bold w-9 text-right"
-                        style={{ color: "#2d2420" }}
-                      >
-                        {pct}%
-                      </span>
-                      <div className="flex -space-x-1 w-16">
-                        {voters.slice(0, 4).map((m) => (
-                          <span
-                            key={m!.id}
-                            className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white border border-white"
-                            style={{ background: m!.color }}
-                            title={m!.name}
-                          >
-                            {m!.avatar}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
+                     {/* Vote bar */}
+                     <div className="flex items-center gap-2 mt-2">
+                       <div
+                         className="flex-1 h-2.5 rounded-full overflow-hidden"
+                         style={{ background: "#f0d8c4" }}
+                       >
+                         <motion.div
+                           className="h-full rounded-full transition-all duration-700"
+                           style={{
+                             width: `${pct}%`,
+                             background:
+                               isLeader
+                                 ? "linear-gradient(90deg, #c44a20, #d97706)"
+                                 : "#e87d54",
+                           }}
+                         />
+                       </div>
+                       <span
+                         className="text-xs font-bold w-9 text-right"
+                         style={{ color: "#2d2420" }}
+                       >
+                         {pct}%
+                       </span>
+                       <div className="flex -space-x-1 w-16">
+                         {voters.slice(0, 4).map((m) => (
+                           <motion.span
+                             key={m!.id}
+                             initial={{ scale: 0 }}
+                             animate={{ scale: 1 }}
+                             transition={{ delay: index * 0.05, duration: 0.3 }}
+                             className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white border border-white"
+                             style={{ background: m!.color }}
+                             title={m!.name}
+                           >
+                             {m!.avatar}
+                           </motion.span>
+                         ))}
+                       </div>
+                     </div>
+                   </motion.div>
+                 );
+               })}
+           </div>
         </div>
 
         {/* Spin the wheel section */}
@@ -616,14 +626,18 @@ export default function VoteTab({
             Group Status ({votes.length}/{members.length} voted)
           </p>
           <div className="flex flex-wrap gap-2">
-            {members.map((member) => {
+            {members.map((member, index) => {
               const memberVote = votes.find((v) => v.memberId === member.id);
               const votedFor = memberVote
                 ? restaurants.find((r) => r.id === memberVote.restaurantId)
                 : null;
+              
               return (
-                <div
+                <motion.div
                   key={member.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.03, duration: 0.3 }}
                   className="flex items-center gap-2 px-3 py-2 rounded-xl"
                   style={{
                     background: memberVote ? "#fdf4f0" : "#f5f5f5",
@@ -647,10 +661,21 @@ export default function VoteTab({
                       {votedFor ? votedFor.name : "Not voted yet"}
                     </p>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
+          
+          {/* Show waiting message if not everyone has voted */}
+          {votes.length < members.length && (
+            <div className="flex items-center gap-2 mt-3">
+              <div className="w-3 h-3 rounded-full animate-pulse"
+                   style={{ background: "#c44a20" }}></div>
+              <p className="text-sm" style={{ color: "#8a5a40" }}>
+                Waiting for {members.length - votes.length} {members.length - votes.length === 1 ? "person" : "people"} to vote...
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

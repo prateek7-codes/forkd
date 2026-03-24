@@ -22,6 +22,7 @@ export type SourceFilter = "all" | "ai" | "google" | "curated";
 export interface VoteRecord {
   memberId: string;
   restaurantId: string;
+  timestamp: number;
 }
 
 export interface AppState {
@@ -57,10 +58,15 @@ function loadInitialState(): AppState {
     const saved = sessionStorage.getItem("forkd-state");
     if (saved) {
       const parsed = JSON.parse(saved) as Partial<AppState>;
+      // Ensure votes have timestamp for backward compatibility
+      const votes = (parsed.votes ?? base.votes).map((v: VoteRecord) => ({
+        ...v,
+        timestamp: v.timestamp ?? Date.now(),
+      }));
       return {
         ...base,
         shortlist: parsed.shortlist ?? base.shortlist,
-        votes: parsed.votes ?? base.votes,
+        votes,
         selectedTimeSlot: parsed.selectedTimeSlot ?? base.selectedTimeSlot,
         groupName: parsed.groupName ?? base.groupName,
         groupId: parsed.groupId ?? base.groupId,
@@ -135,33 +141,33 @@ export default function Home() {
     }));
   }, []);
 
-  const castVote = useCallback(
-    (restaurantId: string) => {
-      setState((prev) => {
-        const existingVote = prev.votes.find(
-          (v) => v.memberId === prev.currentUser.id
-        );
-        if (existingVote) {
-          return {
-            ...prev,
-            votes: prev.votes.map((v) =>
-              v.memberId === prev.currentUser.id
-                ? { ...v, restaurantId }
-                : v
-            ),
-          };
-        }
-        return {
-          ...prev,
-          votes: [
-            ...prev.votes,
-            { memberId: prev.currentUser.id, restaurantId },
-          ],
-        };
-      });
-    },
-    []
-  );
+   const castVote = useCallback(
+     (restaurantId: string) => {
+       setState((prev) => {
+         const existingVote = prev.votes.find(
+           (v) => v.memberId === prev.currentUser.id
+         );
+         if (existingVote) {
+           return {
+             ...prev,
+             votes: prev.votes.map((v) =>
+               v.memberId === prev.currentUser.id
+                 ? { ...v, restaurantId, timestamp: Date.now() }
+                 : v
+             ),
+           };
+         }
+         return {
+           ...prev,
+           votes: [
+             ...prev.votes,
+             { memberId: prev.currentUser.id, restaurantId, timestamp: Date.now() },
+           ],
+         };
+       });
+     },
+     []
+   );
 
   const resetVotes = useCallback(() => {
     setState((prev) => ({ ...prev, votes: [] }));

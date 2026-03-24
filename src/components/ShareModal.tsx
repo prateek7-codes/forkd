@@ -6,10 +6,19 @@ interface Props {
   groupId: string;
   groupName: string;
   onClose: () => void;
+  darkMode?: boolean;
 }
 
-export default function ShareModal({ groupId, groupName, onClose }: Props) {
+export default function ShareModal({ groupId, groupName, onClose, darkMode = false }: Props) {
   const [copied, setCopied] = useState(false);
+
+  const isDark = darkMode;
+  const bg = isDark ? "#0f0f10" : "#fdf8f0";
+  const cardBg = isDark ? "#1a1a1d" : "white";
+  const textPrimary = isDark ? "#f5f5f5" : "#2d2420";
+  const textSecondary = isDark ? "#9ca3af" : "#8a5a40";
+  const accent = isDark ? "#ff8a3d" : "#c44a20";
+  const border = isDark ? "#2d2d30" : "#f0d8c4";
 
   const shareUrl =
     typeof window !== "undefined"

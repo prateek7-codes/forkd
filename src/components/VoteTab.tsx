@@ -15,6 +15,7 @@ interface Props {
   onResetVotes: () => void;
   onSetTimeSlot: (slot: string) => void;
   onSelectRestaurant: (r: Restaurant) => void;
+  darkMode?: boolean;
 }
 
 function WheelSpinner({
@@ -211,10 +212,19 @@ export default function VoteTab({
   onResetVotes,
   onSetTimeSlot,
   onSelectRestaurant,
+  darkMode = false,
 }: Props) {
   const [showWheel, setShowWheel] = useState(false);
   const [wheelWinner, setWheelWinner] = useState<Restaurant | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+
+  const isDark = darkMode;
+  const cardBg = isDark ? "#1a1a1d" : "white";
+  const textPrimary = isDark ? "#f5f5f5" : "#2d2420";
+  const textSecondary = isDark ? "#9ca3af" : "#8a5a40";
+  const accent = isDark ? "#ff8a3d" : "#c44a20";
+  const border = isDark ? "#2d2d30" : "#f0d8c4";
+  const inputBg = isDark ? "#1a1a1d" : "white";
 
   // Pre-generate confetti positions to avoid Math.random in render
   const confettiPieces = Array.from({ length: 30 }, (_, i) => ({

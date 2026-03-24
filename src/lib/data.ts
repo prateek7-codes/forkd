@@ -27,6 +27,10 @@ export interface Review {
   date: string;
 }
 
+export type RestaurantType = "ai" | "google" | "curated";
+
+export type RestaurantBadge = "AI Suggested" | "Popular" | "Featured" | "Trending";
+
 export interface Restaurant {
   id: string;
   name: string;
@@ -40,8 +44,21 @@ export interface Restaurant {
   topDishes: string[];
   tags: Tag[];
   reviews: Review[];
-  imageColor: string; // gradient color for placeholder
+  imageColor: string;
   isManuallyAdded?: boolean;
+  type?: RestaurantType;
+  badges?: RestaurantBadge[];
+  // Google-specific fields
+  address?: string;
+  phoneNumber?: string;
+  website?: string;
+  openingHours?: string[];
+  photos?: string[];
+  placeId?: string;
+  geometry?: {
+    lat: number;
+    lng: number;
+  };
 }
 
 export interface GroupMember {
@@ -134,8 +151,10 @@ export const SEED_RESTAURANTS: Restaurant[] = [
       "Clam Sukka",
     ],
     tags: ["Traditional", "Fine Dining", "Romantic"],
-    imageColor: "from-blue-800 to-teal-700",
-    reviews: [
+  imageColor: "from-blue-800 to-teal-700",
+  type: "curated",
+  badges: ["Featured"],
+  reviews: [
       {
         author: "Vikram S.",
         avatar: "V",
@@ -178,6 +197,8 @@ export const SEED_RESTAURANTS: Restaurant[] = [
     ],
     tags: ["Rooftop", "Trendy", "Cocktail Bar", "Large Groups"],
     imageColor: "from-indigo-800 to-blue-600",
+    type: "curated",
+    badges: ["Trending"],
     reviews: [
       {
         author: "Ananya K.",

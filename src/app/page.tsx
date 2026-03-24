@@ -14,8 +14,10 @@ import ManualAddTab from "@/components/ManualAddTab";
 import RestaurantModal from "@/components/RestaurantModal";
 import GroupSidebar from "@/components/GroupSidebar";
 import ShareModal from "@/components/ShareModal";
+import SelectionConfirmModal from "@/components/SelectionConfirmModal";
 
 export type TabId = "discover" | "shortlist" | "vote" | "add";
+export type SourceFilter = "all" | "ai" | "google" | "curated";
 
 export interface VoteRecord {
   memberId: string;
@@ -75,15 +77,37 @@ function loadInitialState(): AppState {
   return base;
 }
 
+function loadDarkMode(): boolean {
+  if (typeof window === "undefined") return false;
+  const stored = localStorage.getItem("forkd-dark-mode");
+  if (stored !== null) return stored === "true";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>("discover");
   const [selectedRestaurant, setSelectedRestaurant] =
     useState<Restaurant | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showGroupSidebar, setShowGroupSidebar] = useState(false);
+  const [darkMode, setDarkMode] = useState(loadDarkMode);
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
+  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
+  const [selectedWinner, setSelectedWinner] = useState<Restaurant | null>(null);
 
   const [state, setState] = useState<AppState>(loadInitialState);
 
+  // Dark mode effect
+  useEffect(() => {
+    localStorage.setItem("forkd-dark-mode", darkMode.toString());
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
+
+  // Session storage persistence
   useEffect(() => {
     try {
       sessionStorage.setItem(
@@ -167,15 +191,48 @@ export default function Home() {
     { id: "add", label: "Add", icon: "➕" },
   ];
 
+  // Determine current winner from votes
+  const voteMap: Record<string, string[]> = {};
+  state.votes.forEach((v) => {
+    if (!voteMap[v.restaurantId]) voteMap[v.restaurantId] = [];
+    voteMap[v.restaurantId].push(v.memberId);
+  });
+
+  const shortlisted = state.restaurants.filter((r) => state.shortlist.includes(r.id));
+  const maxVotes = Math.max(...shortlisted.map((r) => voteMap[r.id]?.length ?? 0), 0);
+  const winners = shortlisted.filter(
+    (r) => (voteMap[r.id]?.length ?? 0) === maxVotes && maxVotes > 0
+  );
+  const isTie = winners.length > 1;
+
+  const handleConfirmWinner = () => {
+    if (winners.length === 1 && !isTie) {
+      setSelectedWinner(winners[0]);
+    } else if (isTie) {
+      // Can't confirm a tie - need to use wheel first
+      setActiveTab("vote");
+    }
+  };
+
+  const isDark = darkMode;
+  const bg = isDark ? "#0f0f10" : "#fdf8f0";
+  const cardBg = isDark ? "#1a1a1d" : "white";
+  const textPrimary = isDark ? "#f5f5f5" : "#2d2420";
+  const textSecondary = isDark ? "#9ca3af" : "#8a5a40";
+  const accent = isDark ? "#ff8a3d" : "#c44a20";
+  const border = isDark ? "#2d2d30" : "#f0e0cc";
+  const headerBg = isDark ? "rgba(15,15,16,0.92)" : "rgba(253,248,240,0.92)";
+  const tabBg = isDark ? "#1a1a1d" : "#f5e8d8";
+
   return (
-    <div className="min-h-screen" style={{ background: "#fdf8f0" }}>
+    <div className="min-h-screen" style={{ background: bg }}>
       {/* Header */}
       <header
         className="sticky top-0 z-40 border-b"
         style={{
-          background: "rgba(253, 248, 240, 0.92)",
+          background: headerBg,
           backdropFilter: "blur(12px)",
-          borderColor: "#f0e0cc",
+          borderColor: border,
         }}
       >
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -183,18 +240,18 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-lg"
-              style={{ background: "linear-gradient(135deg, #c44a20, #d97706)" }}
+              style={{ background: `linear-gradient(135deg, ${accent}, #d97706)` }}
             >
               F
             </div>
             <div>
               <h1
                 className="text-xl font-bold leading-none"
-                style={{ fontFamily: "var(--font-display)", color: "#2d2420" }}
+                style={{ fontFamily: "var(--font-display)", color: textPrimary }}
               >
                 Forkd
               </h1>
-              <p className="text-xs leading-none mt-0.5" style={{ color: "#a06040" }}>
+              <p className="text-xs leading-none mt-0.5" style={{ color: textSecondary }}>
                 {state.groupName}
               </p>
             </div>
@@ -202,14 +259,36 @@ export default function Home() {
 
           {/* Header actions */}
           <div className="flex items-center gap-2">
+            {/* Dark mode toggle */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+              style={{
+                background: cardBg,
+                border: `1px solid ${border}`,
+                color: textSecondary,
+              }}
+              title={darkMode ? "Light mode" : "Dark mode"}
+            >
+              {darkMode ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+              )}
+            </button>
+
             {/* Current user selector */}
             <button
               onClick={() => setShowGroupSidebar(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all"
               style={{
-                background: "#fdf4f0",
-                border: "1px solid #f0d0c0",
-                color: "#2d2420",
+                background: cardBg,
+                border: `1px solid ${border}`,
+                color: textPrimary,
               }}
             >
               <span
@@ -226,7 +305,7 @@ export default function Home() {
               onClick={() => setShowShareModal(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all"
               style={{
-                background: "linear-gradient(135deg, #c44a20, #d97706)",
+                background: `linear-gradient(135deg, ${accent}, #d97706)`,
                 color: "white",
               }}
             >
@@ -253,7 +332,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-4 pb-3">
           <div
             className="flex gap-1 p-1 rounded-2xl"
-            style={{ background: "#f5e8d8" }}
+            style={{ background: tabBg }}
           >
             {tabs.map((tab) => (
               <button
@@ -263,12 +342,11 @@ export default function Home() {
                 style={
                   activeTab === tab.id
                     ? {
-                        background:
-                          "linear-gradient(135deg, #c44a20, #d97706)",
+                        background: `linear-gradient(135deg, ${accent}, #d97706)`,
                         color: "white",
                         boxShadow: "0 4px 15px rgba(196,74,32,0.35)",
                       }
-                    : { color: "#8a5a40" }
+                    : { color: textSecondary }
                 }
               >
                 <span>{tab.icon}</span>
@@ -280,7 +358,7 @@ export default function Home() {
                       background:
                         activeTab === "shortlist"
                           ? "rgba(255,255,255,0.3)"
-                          : "#c44a20",
+                          : accent,
                     }}
                   >
                     {shortlistCount}
@@ -313,6 +391,11 @@ export default function Home() {
             shortlist={state.shortlist}
             onToggleShortlist={toggleShortlist}
             onSelectRestaurant={setSelectedRestaurant}
+            sourceFilter={sourceFilter}
+            onSourceFilterChange={setSourceFilter}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            darkMode={darkMode}
           />
         )}
         {activeTab === "shortlist" && (
@@ -324,6 +407,9 @@ export default function Home() {
             onToggleShortlist={toggleShortlist}
             onSelectRestaurant={setSelectedRestaurant}
             onGoToVote={() => setActiveTab("vote")}
+            onConfirmWinner={handleConfirmWinner}
+            hasWinner={winners.length === 1 && !isTie}
+            darkMode={darkMode}
           />
         )}
         {activeTab === "vote" && (
@@ -338,6 +424,7 @@ export default function Home() {
             onResetVotes={resetVotes}
             onSetTimeSlot={setTimeSlot}
             onSelectRestaurant={setSelectedRestaurant}
+            darkMode={darkMode}
           />
         )}
         {activeTab === "add" && (
@@ -346,9 +433,42 @@ export default function Home() {
               addManualRestaurant(r);
               setActiveTab("discover");
             }}
+            darkMode={darkMode}
           />
         )}
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 border-t md:hidden z-40"
+        style={{ 
+          background: headerBg, 
+          backdropFilter: "blur(12px)",
+          borderColor: border,
+          paddingBottom: "env(safe-area-inset-bottom)"
+        }}>
+        <div className="flex justify-around items-center h-16">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all ${
+                activeTab === tab.id ? "scale-105" : ""
+              }`}
+              style={{
+                color: activeTab === tab.id ? accent : textSecondary,
+              }}
+            >
+              <span className="text-lg">{tab.icon}</span>
+              <span className="text-xs font-medium">{tab.label}</span>
+              {tab.id === "shortlist" && shortlistCount > 0 && (
+                <span className="absolute top-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: accent, right: "20%" }}>
+                  {shortlistCount}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </nav>
 
       {/* Restaurant Detail Modal */}
       {selectedRestaurant && (
@@ -357,6 +477,19 @@ export default function Home() {
           isShortlisted={state.shortlist.includes(selectedRestaurant.id)}
           onToggleShortlist={() => toggleShortlist(selectedRestaurant.id)}
           onClose={() => setSelectedRestaurant(null)}
+          darkMode={darkMode}
+        />
+      )}
+
+      {/* Selection Confirmation Modal */}
+      {selectedWinner && (
+        <SelectionConfirmModal
+          restaurant={selectedWinner}
+          timeSlot={state.selectedTimeSlot}
+          groupName={state.groupName}
+          members={state.members}
+          onClose={() => setSelectedWinner(null)}
+          darkMode={darkMode}
         />
       )}
 
@@ -371,6 +504,7 @@ export default function Home() {
           onUpdateGroupName={(name: string) =>
             setState((prev) => ({ ...prev, groupName: name }))
           }
+          darkMode={darkMode}
         />
       )}
 
@@ -380,6 +514,7 @@ export default function Home() {
           groupId={state.groupId}
           groupName={state.groupName}
           onClose={() => setShowShareModal(false)}
+          darkMode={darkMode}
         />
       )}
     </div>

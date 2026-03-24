@@ -8,6 +8,7 @@ interface Props {
   isShortlisted: boolean;
   onToggleShortlist: () => void;
   onClose: () => void;
+  darkMode?: boolean;
 }
 
 function StarRating({ rating, large = false }: { rating: number; large?: boolean }) {
@@ -44,7 +45,16 @@ export default function RestaurantModal({
   isShortlisted,
   onToggleShortlist,
   onClose,
+  darkMode = false,
 }: Props) {
+  const isDark = darkMode;
+  const bg = isDark ? "#0f0f10" : "#fdf8f0";
+  const cardBg = isDark ? "#1a1a1d" : "white";
+  const textPrimary = isDark ? "#f5f5f5" : "#2d2420";
+  const textSecondary = isDark ? "#9ca3af" : "#8a5a40";
+  const accent = isDark ? "#ff8a3d" : "#c44a20";
+  const border = isDark ? "#2d2d30" : "#f0d8c4";
+
   // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

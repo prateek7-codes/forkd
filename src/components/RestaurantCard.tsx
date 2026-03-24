@@ -8,6 +8,7 @@ interface Props {
   onToggleShortlist: () => void;
   onSelect: () => void;
   compact?: boolean;
+  darkMode?: boolean;
 }
 
 function StarRating({ rating }: { rating: number }) {
@@ -41,17 +42,45 @@ export default function RestaurantCard({
   onToggleShortlist,
   onSelect,
   compact = false,
+  darkMode = false,
 }: Props) {
-  const { name, area, city, cuisine, budget, rating, totalReviews, description, topDishes, tags, imageColor, isManuallyAdded } =
+  const isDark = darkMode;
+  const cardBg = isDark ? "#1a1a1d" : "white";
+  const textPrimary = isDark ? "#f5f5f5" : "#2d2420";
+  const textSecondary = isDark ? "#9ca3af" : "#8a5a40";
+  const accent = isDark ? "#ff8a3d" : "#c44a20";
+  const border = isDark ? "#2d2d30" : "#f0d8c4";
+
+  const { name, area, city, cuisine, budget, rating, totalReviews, description, topDishes, tags, imageColor, isManuallyAdded, badges, type } =
     restaurant;
+
+  const getBadgeColor = (badge?: string) => {
+    switch (badge) {
+      case "AI Suggested": return "#7c3aed";
+      case "Popular": return "#0284c7";
+      case "Featured": return accent;
+      case "Trending": return "#dc2626";
+      default: return accent;
+    }
+  };
+
+  const getBadgeIcon = (badge?: string) => {
+    switch (badge) {
+      case "AI Suggested": return "🤖";
+      case "Popular": return "🌍";
+      case "Featured": return "⭐";
+      case "Trending": return "🔥";
+      default: return "⭐";
+    }
+  };
 
   return (
     <div
-      className="rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 group"
+      className="rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 group hover:scale-[1.02]"
       style={{
-        background: "white",
-        border: "1px solid #f0d8c4",
-        boxShadow: "0 2px 8px rgba(196,74,32,0.06)",
+        background: cardBg,
+        border: `1px solid ${border}`,
+        boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 8px rgba(196,74,32,0.06)",
       }}
       onClick={onSelect}
     >
@@ -62,15 +91,42 @@ export default function RestaurantCard({
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
-        {/* Badge */}
-        {isManuallyAdded && (
-          <span
-            className="absolute top-3 left-3 text-xs font-semibold px-2 py-0.5 rounded-full"
-            style={{ background: "#d97706", color: "white" }}
-          >
-            Added by you
-          </span>
-        )}
+        {/* Badges */}
+        <div className="absolute top-3 left-3 flex gap-1">
+          {badges?.map((badge) => (
+            <span
+              key={badge}
+              className="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1"
+              style={{ background: getBadgeColor(badge), color: "white" }}
+            >
+              {getBadgeIcon(badge)} {badge}
+            </span>
+          ))}
+          {isManuallyAdded && (
+            <span
+              className="text-xs font-semibold px-2 py-0.5 rounded-full"
+              style={{ background: "#d97706", color: "white" }}
+            >
+              Added by you
+            </span>
+          )}
+          {type === "google" && (
+            <span
+              className="text-xs font-semibold px-2 py-0.5 rounded-full"
+              style={{ background: "#0284c7", color: "white" }}
+            >
+              🌍 Popular
+            </span>
+          )}
+          {type === "ai" && (
+            <span
+              className="text-xs font-semibold px-2 py-0.5 rounded-full"
+              style={{ background: "#7c3aed", color: "white" }}
+            >
+              🤖 AI
+            </span>
+          )}
+        </div>
 
         {/* Budget badge */}
         <span
@@ -100,13 +156,13 @@ export default function RestaurantCard({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <StarRating rating={rating} />
-              <span className="text-xs" style={{ color: "#8a5a40" }}>
+              <span className="text-xs" style={{ color: textSecondary }}>
                 ({totalReviews.toLocaleString()})
               </span>
             </div>
             <span
               className="text-xs font-medium px-2 py-0.5 rounded-full"
-              style={{ background: "#fdf4f0", color: "#c44a20", border: "1px solid #f7ccb9" }}
+              style={{ background: isDark ? "#252528" : "#fdf4f0", color: accent, border: `1px solid ${border}` }}
             >
               {cuisine}
             </span>
@@ -118,14 +174,14 @@ export default function RestaurantCard({
               e.stopPropagation();
               onToggleShortlist();
             }}
-            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200"
+            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 active:scale-95"
             style={
               isShortlisted
-                ? { background: "#c44a20", color: "white" }
+                ? { background: accent, color: "white" }
                 : {
-                    background: "#fdf4f0",
-                    color: "#c44a20",
-                    border: "1px solid #f7ccb9",
+                    background: isDark ? "#252528" : "#fdf4f0",
+                    color: accent,
+                    border: `1px solid ${border}`,
                   }
             }
             title={isShortlisted ? "Remove from shortlist" : "Add to shortlist"}
@@ -147,7 +203,7 @@ export default function RestaurantCard({
           <>
             <p
               className="text-sm leading-relaxed mb-3 line-clamp-2"
-              style={{ color: "#6b4030" }}
+              style={{ color: textSecondary }}
             >
               {description}
             </p>
@@ -158,7 +214,7 @@ export default function RestaurantCard({
                 <span
                   key={dish}
                   className="text-xs px-2 py-0.5 rounded-full"
-                  style={{ background: "#fdf8f0", color: "#8a5a40", border: "1px solid #f0d8c4" }}
+                  style={{ background: isDark ? "#252528" : "#fdf8f0", color: textSecondary, border: `1px solid ${border}` }}
                 >
                   {dish}
                 </span>
@@ -171,7 +227,7 @@ export default function RestaurantCard({
                 <span
                   key={tag}
                   className="text-xs px-2 py-0.5 rounded-full font-medium"
-                  style={{ background: "#f5e8d8", color: "#7c4a20" }}
+                  style={{ background: isDark ? "#252528" : "#f5e8d8", color: textSecondary }}
                 >
                   {tag}
                 </span>

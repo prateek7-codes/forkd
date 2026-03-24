@@ -10,12 +10,18 @@ import {
   type Tag,
 } from "@/lib/data";
 import RestaurantCard from "@/components/RestaurantCard";
+import { type SourceFilter } from "@/app/page";
 
 interface Props {
   restaurants: Restaurant[];
   shortlist: string[];
   onToggleShortlist: (id: string) => void;
   onSelectRestaurant: (r: Restaurant) => void;
+  sourceFilter: SourceFilter;
+  onSourceFilterChange: (filter: SourceFilter) => void;
+  viewMode: "grid" | "map";
+  onViewModeChange: (mode: "grid" | "map") => void;
+  darkMode: boolean;
 }
 
 const CITIES = ["All", "Mumbai", "Delhi", "Bangalore", "London"];
@@ -25,9 +31,23 @@ export default function DiscoverTab({
   shortlist,
   onToggleShortlist,
   onSelectRestaurant,
+  sourceFilter,
+  onSourceFilterChange,
+  viewMode,
+  onViewModeChange,
+  darkMode,
 }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState("All");
+
+  const isDark = darkMode;
+  const bg = isDark ? "#0f0f10" : "#fdf8f0";
+  const cardBg = isDark ? "#1a1a1d" : "white";
+  const textPrimary = isDark ? "#f5f5f5" : "#2d2420";
+  const textSecondary = isDark ? "#9ca3af" : "#8a5a40";
+  const accent = isDark ? "#ff8a3d" : "#c44a20";
+  const border = isDark ? "#2d2d30" : "#f0d8c4";
+  const inputBg = isDark ? "#1a1a1d" : "white";
   const [selectedCuisine, setSelectedCuisine] = useState("All");
   const [selectedBudgets, setSelectedBudgets] = useState<Budget[]>([]);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
@@ -66,6 +86,9 @@ export default function DiscoverTab({
   const filtered = useMemo(() => {
     const base = aiResults.length > 0 ? aiResults : restaurants;
     return base.filter((r) => {
+      // Source filter
+      if (sourceFilter !== "all" && r.type !== sourceFilter) return false;
+      
       if (
         searchQuery &&
         !r.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -96,6 +119,7 @@ export default function DiscoverTab({
     selectedCuisine,
     selectedBudgets,
     selectedTags,
+    sourceFilter,
   ]);
 
   const fetchAiSuggestions = async () => {
@@ -188,12 +212,67 @@ export default function DiscoverTab({
         )}
       </div>
 
+      {/* Source Switcher + View Toggle */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex gap-1 p-1 rounded-xl" style={{ background: isDark ? "#1a1a1d" : "#f5e8d8" }}>
+          {[
+            { id: "all" as SourceFilter, label: "All", icon: "🍽️" },
+            { id: "ai" as SourceFilter, label: "AI Picks", icon: "🤖" },
+            { id: "google" as SourceFilter, label: "Popular", icon: "🌍" },
+            { id: "curated" as SourceFilter, label: "Curated", icon: "⭐" },
+          ].map((opt) => (
+            <button
+              key={opt.id}
+              onClick={() => onSourceFilterChange(opt.id)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={
+                sourceFilter === opt.id
+                  ? { background: accent, color: "white" }
+                  : { color: textSecondary }
+              }
+            >
+              <span>{opt.icon}</span>
+              <span className="hidden sm:inline">{opt.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-1 p-1 rounded-xl" style={{ background: isDark ? "#1a1a1d" : "#f5e8d8" }}>
+          <button
+            onClick={() => onViewModeChange("grid")}
+            className="p-2 rounded-lg transition-all"
+            style={
+              viewMode === "grid"
+                ? { background: accent, color: "white" }
+                : { color: textSecondary }
+            }
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+            </svg>
+          </button>
+          <button
+            onClick={() => onViewModeChange("map")}
+            className="p-2 rounded-lg transition-all"
+            style={
+              viewMode === "map"
+                ? { background: accent, color: "white" }
+                : { color: textSecondary }
+            }
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
       {/* Search + Filter bar */}
       <div className="flex gap-2 mb-4">
         <div className="flex-1 relative">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-            style={{ color: "#a06040" }}
+            style={{ color: textSecondary }}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -209,9 +288,9 @@ export default function DiscoverTab({
             placeholder="Search restaurants..."
             className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm outline-none"
             style={{
-              background: "white",
-              border: "1px solid #f0d8c4",
-              color: "#2d2420",
+              background: inputBg,
+              border: `1px solid ${border}`,
+              color: textPrimary,
             }}
           />
         </div>

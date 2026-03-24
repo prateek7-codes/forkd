@@ -12,6 +12,9 @@ interface Props {
   onToggleShortlist: (id: string) => void;
   onSelectRestaurant: (r: Restaurant) => void;
   onGoToVote: () => void;
+  onConfirmWinner?: () => void;
+  hasWinner?: boolean;
+  darkMode?: boolean;
 }
 
 export default function ShortlistTab({
@@ -22,7 +25,17 @@ export default function ShortlistTab({
   onToggleShortlist,
   onSelectRestaurant,
   onGoToVote,
+  onConfirmWinner,
+  hasWinner,
+  darkMode = false,
 }: Props) {
+  const isDark = darkMode;
+  const bg = isDark ? "#0f0f10" : "#fdf8f0";
+  const cardBg = isDark ? "#1a1a1d" : "white";
+  const textPrimary = isDark ? "#f5f5f5" : "#2d2420";
+  const textSecondary = isDark ? "#9ca3af" : "#8a5a40";
+  const accent = isDark ? "#ff8a3d" : "#c44a20";
+  const border = isDark ? "#2d2d30" : "#f0d8c4";
   const shortlisted = restaurants.filter((r) => shortlist.includes(r.id));
 
   // Vote count per restaurant
@@ -162,6 +175,7 @@ export default function ShortlistTab({
             isShortlisted={true}
             onToggleShortlist={() => onToggleShortlist(restaurant.id)}
             onSelect={() => onSelectRestaurant(restaurant)}
+            darkMode={darkMode}
           />
         ))}
       </div>

@@ -18,6 +18,9 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 - [x] **Hover animation** — cards lift on hover (-translate-y-1, shadow-xl)
 - [x] **Empty state** — "Find the perfect place for your group" + "✨ Smart picks tailored for your group"
 - [x] **Image prominence** — larger image area (h-48), stronger gradient fallback, better overlay
+- [x] **AI fallback** — auto-generates 15 realistic restaurants for unsupported cities (no more empty states)
+- [x] **Fallback message** — "We could not find exact matches, showing great picks instead"
+- [x] **Smart picks text** — "✨ Smart picks tailored for your group" below results header
 
 ### Core Features
 - [x] Warm terracotta/amber theme (Tailwind CSS 4 @theme variables)
@@ -118,3 +121,4 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 | 2026-03-24 | Discover UI cleanup: unified search (city/area/name), removed duplicate UI, improved source labels, added search context header, fixed empty state |
 | 2026-03-24 | UX refinements: source labels to Smart Picks/Top Rated/Editor's Picks, added "Great for groups" explanation for Best Pick, improved shortlist CTA with glow effect and larger icon |
 | 2026-03-24 | Launch polish: loading spinner, filters hidden until results, autofocus, context header with 📍, Best Pick golden banner with reasons, Unsplash images, hover lift animation, empty state with "Smart picks tailored for your group", larger card images |
+| 2026-03-24 | AI fallback: auto-generates 15 realistic restaurants for any city, removes dead-end states, "We could not find exact matches" message |

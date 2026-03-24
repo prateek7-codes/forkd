@@ -1,20 +1,28 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const playfair = Playfair_Display({
+  variable: "--font-display",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  style: ["normal", "italic"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
+  variable: "--font-body",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Next.js Template",
-  description: "A minimal Next.js starter template",
+  title: "Forkd — Group Restaurant Chooser",
+  description: "Discover, shortlist, and vote on restaurants with your group. No more endless debates — let Forkd decide.",
+  openGraph: {
+    title: "Forkd — Group Restaurant Chooser",
+    description: "Discover, shortlist, and vote on restaurants with your group.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -23,10 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html lang="en" className={`${playfair.variable} ${inter.variable}`}>
+      <body className="antialiased min-h-screen" style={{ fontFamily: "var(--font-body)" }}>
         {children}
       </body>
     </html>

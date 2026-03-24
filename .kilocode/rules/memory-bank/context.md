@@ -29,6 +29,10 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 - [x] **Smart fallback** — generates contextually accurate results per city with local cuisine/area names
 - [x] **Autocomplete** — OpenStreetMap Nominatim API integration for location suggestions with 300ms debounce
 - [x] **Yelp-style ranking** — (rating * 0.35) + (logReviews * 0.25) + (aiScore * 0.25) + (voteScore * 0.15) with boosts for rating > 4.4 and reviews > 1000
+- [x] **Location-specific fallbacks** — Added Hyderabad, Chennai, Pune to city-specific restaurant databases
+- [x] **Pseudo-random generation** — Deterministic unique results per city using seeded hash function
+- [x] **Debug logging** — Added console logs for city, area, cacheKey in fallback generation and API calls
+- [x] **Strict AI prompts** — Enhanced prompt with "results must be UNIQUE and DIFFERENT each time"
 
 ### Core Features
 - [x] Warm terracotta/amber theme (Tailwind CSS 4 @theme variables)
@@ -132,3 +136,4 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 | 2026-03-24 | AI fallback: auto-generates 15 realistic restaurants for any city, removes dead-end states, "We could not find exact matches" message |
 | 2026-03-24 | Global search accuracy: input normalization (Bandra Mumbai → Mumbai), strict city matching, validation layer, updated AI prompt with location strictness, Yelp-like city-specific restaurant databases |
 | 2026-03-24 | Yelp-style search: OpenStreetMap Nominatim autocomplete, improved ranking formula with boosts, enhanced validation |
+| 2026-03-24 | Fixed city duplication bug: added Hyderabad, Chennai, Pune to specific databases, pseudo-random generation for unique per-city results, debug logging |

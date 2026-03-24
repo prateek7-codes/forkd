@@ -197,9 +197,25 @@ export default function DiscoverTab({
     selectedTags.length;
 
   const generateAIFallback = (city: string, area?: string): Restaurant[] => {
-    const cacheKey = `${area || "city"}_${city.toLowerCase()}`;
+    const normalizedCity = city.trim();
+    const normalizedArea = area?.trim() || "";
+    const cacheKey = `${normalizedCity.toLowerCase()}_${normalizedArea.toLowerCase() || "all"}`;
+    
+    console.log(`[DEBUG] Generating fallback for city: ${normalizedCity}, area: ${normalizedArea}, cacheKey: ${cacheKey}`);
     
     const CITY_RESTAURANTS: Record<string, { names: string[], cuisines: string[], areas: string[], dishes: string[][] }> = {
+      "hyderabad": {
+        names: ["Paradise", "Bawarchi", "Shah Ghouse", "Hotel Shadab", "Ch尤其是", "Minerva", "Grand Hotel", "Nice", "Kamat", "4M", "Alpha", "D replicate", "Asian", "Raffah", "M均有"],
+        cuisines: ["Indian", "Indian", "Indian", "Indian", "Indian", "Indian", "Indian", "Indian", "Indian", "Indian", "Indian", "Indian", "Indian", "Indian", "Indian"],
+        areas: ["Banjara Hills", "Jubilee Hills", "Gachibowli", "Madhapur", "Secunderabad", "Charminar", "Koti", "Abids", "Mehadipatnam", "Panjagutta", "Ameerpet", "Somajiguda", "Rajendra Nagar", "Lakdi Ka Pool", "Hill Road"],
+        dishes: [["Hyderabadi Biryani", "Chicken 65", "Haleem"], ["Biryani", "Kebab", "Fried Rice"], ["Biryani", "Pathar Ghost", "Rumali Roti"], ["Biryani", "Chicken Fry", "Daal"], ["Biryani", "Mutton Korma", "Naan"]]
+      },
+      "chennai": {
+        names: ["Murugan Idli", "Saravana Bhavan", "Anjappar", "Dosa Corner", "Sangeetha", "Vellappan", "Hot Breads", "Up Baker", "Amma", "RR", "Mathura", "Sea Shell", "Marine", "Bayview", "Palmyra"],
+        cuisines: ["South Indian", "South Indian", "South Indian", "South Indian", "South Indian", "South Indian", "Bakery", "Bakery", "South Indian", "South Indian", "South Indian", "Seafood", "Seafood", "Continental", "Continental"],
+        areas: ["T Nagar", "Anna Nagar", "Mylapore", "Nungambakkam", "Express Avenue", "Thousand Lights", "Besant Nagar", "Marina Beach", "Adyar", "Vadapalani", "Porur", "Guindy", "Kilpauk", "Kodambakkam", "Chepauk"],
+        dishes: [["Idli", "Dosa", "Sambar"], ["Dosa", "Pongal", "Vada"], ["Chettinad Chicken", "Biryani", "Idiyappam"], ["Idli", "Pongal", "Filter Coffee"], ["Idli", "Vada", "Podi"]]
+      },
       "paris": {
         names: ["Le Petit Bistro", "Café de Flore", "L'Atelier", "Le Cinq", "Septime", "Le Comptoir", "Bouillon Chartier", "Frenchie", "Le Marais", "Café de la Paix", "L'Ambroisie", "Le Pain Quotidien", "Café des Musées", "Les Philosophes", "Le Zimmer"],
         cuisines: ["French", "French", "French", "French", "French", "French", "French", "French", "French", "French", "French", "French", "French", "French", "French"],
@@ -213,7 +229,7 @@ export default function DiscoverTab({
         dishes: [["Tonkotsu Ramen", "Chashu Bowl", "Takoyaki"], ["Sushi Omakase", "Uni", "Otoro"], ["Modern Kaiseki", "Wagyu", "Seasonal"], ["Satoyama Kitchen", "Wild Herbs", "Foraged"], ["Kaiseki", "Tempura", "Matcha"]]
       },
       "new york": {
-        names: ["Eleven Madison Park", "Le Bernardin", "Per Se", "Carbone", "Keens", "Botequín", "Carbone", "Peter Luger", "Gramercy Tavern", "The Spotted Pig", "Momofuku Noodle Bar", "Nobu", "The Four Seasons", "L'Atelier", "Häagen-Dazs"],
+        names: ["Eleven Madison Park", "Le Bernardin", "Per Se", "Carbone", "Keens", "Botequin", "Carbone", "Peter Luger", "Gramercy Tavern", "The Spotted Pig", "Momofuku Noodle Bar", "Nobu", "The Four Seasons", "L'Atelier", "Haagen-Dazs"],
         cuisines: ["American", "French", "American", "Italian", "Steakhouse", "Mexican", "Italian", "Steakhouse", "American", "American", "Japanese", "Japanese", "American", "French", "American"],
         areas: ["Flatbush", "Midtown", "Time Square", "Greenwich Village", "Murray Hill", "SoHo", "Greenwich Village", "Williamsburg", "Gramercy", "West Village", "East Village", "TriBeCa", "Midtown", "Midtown", "Upper West Side"],
         dishes: [["Lobter", "Truffle", "Wagyu"], ["Bass", "Caviar", "Sea"], ["Egg", "Oyster", "Game"], ["Pasta", "Osso Buco", "Tiramisu"], ["Porterhouse", "Bone Marrow", "Cobb"]]
@@ -238,36 +254,75 @@ export default function DiscoverTab({
       },
       "bangalore": {
         names: ["Karavalli", "Toit", "Arbor", "Brahmin", "Jamavar", "Mavalli", "Vidyarthi", "Koshy", "Iron Hill", "Lazy", "The Hummingbird", "Punjab", "Adiga", "CTR", "MTR"],
-        cuisines: ["Seafood", "Fusion", "American", "Indian", "Indian", "South Indian", "South Indian", "Continental", "Continental", "Café", "Café", "Punjabi", "South Indian", "South Indian", "South Indian"],
+        cuisines: ["Seafood", "Fusion", "American", "Indian", "Indian", "South Indian", "South Indian", "Continental", "Continental", "Cafe", "Cafe", "Punjabi", "South Indian", "South Indian", "South Indian"],
         areas: ["Shivajinagar", "Indiranagar", "Indiranagar", "Basavanagudi", "UB City", "Mavalli", "Malleswaram", "St. Marks", "Koramangala", "Koramangala", "Koramangala", "Brigade Road", "Malleswaram", "Shivajinagar", "Basavanagudi"],
         dishes: [["Neer Dosa", "Gassi", "Moilee"], ["Nachos", "Pizza", "Beermisu"], ["Burger", "Wings", "Fish"], ["Idli Vada", "Dosa", "Coffee"], ["Korma", "Salmon", "Cheesecake"]]
+      },
+      "pune": {
+        names: ["Vaishali", "German Bakery", "Blue Longe", "Chitale", "MR", "Sujata", "Malgudi", "Co", "Shar", "Prem", "Swarali", "Ashraya", "Madhura", "Saffron", "Tertio"],
+        cuisines: ["Indian", "Bakery", "Continental", "Indian", "Indian", "South Indian", "Indian", "Cafe", "Indian", "Indian", "Indian", "Indian", "Indian", "Indian", "Italian"],
+        areas: ["FC Road", "Koregaon Park", "Viman Nagar", "Shivaji Nagar", "Deccan", "Camp", "Kothrud", "Aundh", "Baner", "Wakad", "Pashan", "E-Square", "JM Road", "Lakshmi Road", "NIBM"],
+        dishes: [["Misal Pav", "Pav Bhaji", "Puran Poli"], ["Sandwich", "Pizza", "Pasta"], ["Pasta", "Salad", "Dessert"], ["Puran Poli", "Bhakri", "Khadakdas"], ["Vada Pav", "Kathi Roll", "Bhel"]]
       }
     };
 
-    const fallbackData = CITY_RESTAURANTS[city.toLowerCase()] || {
-      names: [
-        "The Grand Feast", "Spice Garden", "Urban Tadka", "Bay View", "The Roof Garden",
-        "Curry House", "Coastal Kitchen", "Urban Palette", "The Spice Route", "Garden Terrace",
-        "The Local Kitchen", "Harbor Lights", "The Fusion House", "Street Food Corner", "The Royal Table"
-      ],
-      cuisines: ["Indian", "Italian", "Chinese", "Japanese", "Mexican", "Continental", "Seafood", "Thai", "Korean", "French", "American", "Mediterranean", "Vietnamese", "Greek", "Spanish"],
-      areas: ["Downtown", "City Center", "Waterfront", "Old Town", "Arts District", "Financial District", "University District", "Harbor", "Midtown", "West End", "East Side", "South Beach", "North End", "Chinatown", "Little Italy"],
-      dishes: [["Signature Platter", "Chef's Special", "House Favorite"], ["Seasonal Soup", "House Salad", "Artisan Bread"], ["Grilled Special", "Catch of Day", "Vegetables"], ["Traditional Dish", "Regional Favorite", "Chef's Pick"], ["Pasta", "Risotto", "Tiramisu"]]
-    };
+    const fallbackData = CITY_RESTAURANTS[normalizedCity.toLowerCase()];
+    
+    if (!fallbackData) {
+      const seed = normalizedCity.length;
+      const pseudoRandom = (idx: number) => {
+        const hash = seed * 1000 + idx * 17 + 7;
+        return ((hash * 9301 + 49297) % 233280) / 233280;
+      };
+      
+      const genericNames = [
+        "The City Kitchen", "Taste of Place", "Urban Flavors", "The Local Eatery", "Harbor View",
+        "The Garden Table", "Spice Route", "Downtown Dining", "The Corner Bistro", "Riverside Grill",
+        "The Heritage Kitchen", "Metropolitan", "The Social House", "The Green Leaf", "Urban Spice"
+      ];
+      
+      const genericCuisines = ["Indian", "Italian", "Chinese", "Japanese", "Mexican", "Continental", "Seafood", "Thai", "Korean", "French", "American", "Mediterranean"];
+      
+      const genericAreas = ["Downtown", "City Center", "Waterfront", "Old Town", "Arts District", "Financial District", "University District", "Harbor Area", "Midtown", "West End", "East Side", "South District", "North End", "Central", "Riverside"];
+      
+      return genericNames.map((name, idx) => ({
+        id: `ai-fallback-${cacheKey}-${idx}`,
+        name: `${name} ${normalizedCity}`.trim(),
+        area: normalizedArea || genericAreas[idx % genericAreas.length],
+        city: normalizedCity,
+        cuisine: genericCuisines[idx % genericCuisines.length],
+        budget: ["$", "$$", "$$$", "$$$$"][idx % 4] as Budget,
+        rating: 3.8 + pseudoRandom(idx) * 0.9,
+        totalReviews: Math.floor(100 + pseudoRandom(idx + 100) * 3000),
+        description: `A popular dining destination in ${normalizedCity}${normalizedArea ? ` in ${normalizedArea}` : ''}, known for its excellent cuisine and welcoming atmosphere. Perfect for group gatherings and special occasions.`,
+        topDishes: ["Signature Dish", "Chef's Special", "House Favorite", "Seasonal Delight"].slice(0, 3),
+        tags: [["Family Friendly", "Large Groups", "Trendy"], ["Romantic", "Fine Dining", "Cocktail Bar"], ["Casual", "Quick Bites", "Late Night"], ["Outdoor Seating", "Brunch", "Vegetarian Friendly"], ["Large Groups", "Live Music", "Rooftop"]][idx % 5] as Tag[],
+        reviews: [],
+        imageColor: ["from-orange-600 to-red-500", "from-amber-600 to-yellow-500", "from-rose-600 to-pink-500", "from-emerald-600 to-teal-500", "from-violet-600 to-purple-500"][idx % 5],
+        type: "ai" as const,
+        badges: idx === 0 ? ["AI Suggested"] : undefined,
+      }));
+    }
 
     const { names, cuisines, areas, dishes } = fallbackData;
-    const finalArea = area && area.trim() ? area : areas[0];
+    const finalArea = normalizedArea || areas[0];
+    
+    const seed = normalizedCity.length;
+    const pseudoRandom = (idx: number) => {
+      const hash = seed * 1000 + idx * 17 + 7;
+      return ((hash * 9301 + 49297) % 233280) / 233280;
+    };
     
     return names.slice(0, 15).map((name, idx) => ({
       id: `ai-fallback-${cacheKey}-${idx}`,
       name,
       area: finalArea || areas[idx % areas.length],
-      city,
+      city: normalizedCity,
       cuisine: cuisines[idx % cuisines.length],
       budget: ["$", "$$", "$$$", "$$$$"][idx % 4] as Budget,
-      rating: 4.0 + Math.random() * 0.8,
-      totalReviews: Math.floor(150 + Math.random() * 2000),
-      description: `A popular dining destination in ${city}${finalArea ? ` in ${finalArea}` : ''}, known for its excellent cuisine and welcoming atmosphere. Perfect for group gatherings and special occasions.`,
+      rating: 3.8 + pseudoRandom(idx) * 0.9,
+      totalReviews: Math.floor(100 + pseudoRandom(idx + 100) * 3000),
+      description: `A popular dining destination in ${normalizedCity}${finalArea ? ` in ${finalArea}` : ''}, known for its excellent cuisine and welcoming atmosphere. Perfect for group gatherings and special occasions.`,
       topDishes: dishes[idx % dishes.length],
       tags: [["Family Friendly", "Large Groups", "Trendy"], ["Romantic", "Fine Dining", "Cocktail Bar"], ["Casual", "Quick Bites", "Late Night"], ["Outdoor Seating", "Brunch", "Vegetarian Friendly"], ["Large Groups", "Live Music", "Rooftop"]][idx % 5] as Tag[],
       reviews: [],

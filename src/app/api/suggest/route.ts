@@ -17,42 +17,37 @@ function buildPrompt(city: string, area?: string): string {
   
   return `You are a restaurant recommendation assistant for a group dining app called Forkd.
 
-CRITICAL STRICT RULES:
-- ALL 15 restaurants MUST be ONLY in "${city}"
-- NEVER include restaurants from any other city or country
-- NEVER mention any other city in descriptions or reviews
-- Use ONLY realistic neighborhood names from ${city}
-- If area is provided ("${area}"), prioritize restaurants in that neighborhood
+STRICT REQUIREMENTS:
+1. ALL 15 restaurants MUST be located in "${city}" ONLY
+2. Do NOT include any restaurants from other cities or countries
+3. NEVER mention any other city in descriptions, reviews, or anywhere
+4. Each restaurant's "city" field must be EXACTLY "${city}"
+5. Each restaurant's "area" field must be a real neighborhood in ${city}
+6. Results must be UNIQUE and DIFFERENT each time - vary the restaurants you recommend
+7. If area is provided ("${area}"), prioritize restaurants in that specific neighborhood
 
-Suggest exactly 15 top restaurants in "${location}". For each restaurant, return a JSON object matching this TypeScript type:
+For each restaurant, return:
 
 {
-  id: string,           // unique slug, e.g. "paris-1"
-  name: string,         // real restaurant name
-  area: string,         // neighbourhood/district in ${city}
+  id: string,           // unique, e.g. "${city.toLowerCase()}-1"
+  name: string,         // realistic restaurant name (vary these!)
+  area: string,         // REAL neighborhood in ${city}
   city: string,         // MUST be exactly "${city}"
-  cuisine: string,      // cuisine type (e.g. "French", "Japanese", "Indian")
+  cuisine: string,      // cuisine appropriate for ${city} (e.g., sushi in Tokyo, biryani in Hyderabad)
   budget: "$" | "$$" | "$$$" | "$$$$",
-  rating: number,       // 3.5 to 5.0
-  totalReviews: number, // plausible number
-  description: string,  // 2-3 sentences about the restaurant (compelling, editorial tone)
-  topDishes: string[],  // 3-4 signature dishes
-  tags: string[],       // 1-4 from: Romantic, Family Friendly, Large Groups, Rooftop, Outdoor Seating, Vegetarian Friendly, Vegan Options, Late Night, Brunch, Cocktail Bar, Live Music, Pet Friendly, Trendy, Traditional, Fine Dining, Casual, Quick Bites
-  reviews: Array<{
-    author: string,
-    avatar: string,     // 1 capital letter
-    rating: number,     // 4 or 5
-    text: string,       // 1-2 sentences, first-person
-    date: string,       // e.g. "1 week ago"
-  }>,                   // 1-2 reviews per restaurant
-  imageColor: string,   // one of the provided color strings
+  rating: number,       // 3.8 to 4.7
+  totalReviews: number, // 100 to 5000
+  description: string,  // about the restaurant - mention ONLY ${city}
+  topDishes: string[],  // popular dishes there
+  tags: string[],       // vibe tags
+  reviews: Array<{author, avatar, rating, text, date}>
+  imageColor: string,   // from: ${COLORS.join(", ")}
   isManuallyAdded: false
 }
 
-Use these imageColor values (assign one to each restaurant, variety preferred):
-${COLORS.join(", ")}
+Generate 15 DIFFERENT, UNIQUE restaurants for "${location}". No duplicates!
 
-Return ONLY a valid JSON array of 15 restaurant objects. No markdown, no explanation, just the JSON array.`;
+Return ONLY valid JSON array of 15 objects.`;
 }
 
 export async function POST(request: NextRequest) {
@@ -67,6 +62,8 @@ export async function POST(request: NextRequest) {
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
 
+    console.log(`[DEBUG] Suggest API called with city: "${city}", area: "${area}"`);
+
     // If no API key, return curated fallback data
     if (!apiKey) {
       return NextResponse.json(
@@ -74,6 +71,9 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
+
+    const prompt = buildPrompt(city, area);
+    console.log(`[DEBUG] Generated prompt for city: ${city}, area: ${area}`);
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: "user",
-            content: buildPrompt(city, area),
+            content: prompt,
           },
         ],
       }),

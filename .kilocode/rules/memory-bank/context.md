@@ -25,6 +25,8 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 - [x] **Strict city matching** — exact match required (with fallback for short cities)
 - [x] **Validation layer** — filters out results not matching searched city
 - [x] **AI prompt** — updated with STRICT rules: ALL restaurants must be ONLY in requested city
+- [x] **Yelp-like data** — city-specific restaurant databases for Paris, Tokyo, New York, London, Mumbai, Delhi, Bangalore
+- [x] **Smart fallback** — generates contextually accurate results per city with local cuisine/area names
 
 ### Core Features
 - [x] Warm terracotta/amber theme (Tailwind CSS 4 @theme variables)
@@ -126,4 +128,4 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 | 2026-03-24 | UX refinements: source labels to Smart Picks/Top Rated/Editor's Picks, added "Great for groups" explanation for Best Pick, improved shortlist CTA with glow effect and larger icon |
 | 2026-03-24 | Launch polish: loading spinner, filters hidden until results, autofocus, context header with 📍, Best Pick golden banner with reasons, Unsplash images, hover lift animation, empty state with "Smart picks tailored for your group", larger card images |
 | 2026-03-24 | AI fallback: auto-generates 15 realistic restaurants for any city, removes dead-end states, "We could not find exact matches" message |
-| 2026-03-24 | Global search accuracy: input normalization (Bandra Mumbai → Mumbai), strict city matching, validation layer, updated AI prompt with location strictness |
+| 2026-03-24 | Global search accuracy: input normalization (Bandra Mumbai → Mumbai), strict city matching, validation layer, updated AI prompt with location strictness, Yelp-like city-specific restaurant databases |

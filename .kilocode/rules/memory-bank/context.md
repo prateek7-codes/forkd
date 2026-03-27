@@ -19,6 +19,8 @@ Forkd is a social group restaurant-chooser app with a warm terracotta/amber edit
 - [x] **2 reviews per restaurant** — Increased from 1 to 2 reviews per restaurant
 - [x] **Best Pick CTA** — Added "Add to Shortlist →" button in Best Pick section
 - [x] **Skeleton loading** — Shows animated skeleton cards + "Finding restaurants..." message during search
+- [x] **Improved data accuracy** — Real OSM cuisine tags now used directly (40+ cuisine mappings), area detection uses addr:suburb/neighbourhood/district tags, dishes are cuisine-specific
+- [x] **Realistic reviews** — Reviews now mention specific dishes and area names for context
 
 ### Launch Polish (Latest)
 - [x] **Loading state** — button shows spinner + "Finding..." text while searching

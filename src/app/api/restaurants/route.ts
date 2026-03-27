@@ -12,17 +12,75 @@ const COLORS = [
   "from-lime-600 to-green-500",
 ];
 
-const cuisineTags: Record<string, string[]> = {
-  indian: ["North Indian", "South Indian", "Biryani", "Tandoor"],
-  chinese: ["Chinese", "Asian", "Pan-Asian"],
-  italian: ["Italian", "Pizza", "Pasta"],
-  japanese: ["Japanese", "Sushi", "Ramen"],
-  mexican: ["Mexican", "Tacos", "Burritos"],
-  american: ["American", "Burgers", "Fast Food"],
-  "north indian": ["North Indian", "Mughlai", "Punjabi"],
-  "south indian": ["South Indian", "Dosa", "Idli"],
-  cafe: ["Cafe", "Coffee", "Bakery"],
-  restaurant: ["Indian", "Multi-cuisine"],
+const cuisineMapping: Record<string, string> = {
+  indian: "Indian",
+  chinese: "Chinese",
+  italian: "Italian",
+  japanese: "Japanese",
+  mexican: "Mexican",
+  american: "American",
+  thai: "Thai",
+  korean: "Korean",
+  "north indian": "North Indian",
+  "south indian": "South Indian",
+  "south_indian": "South Indian",
+  punjabi: "Punjabi",
+  mughlai: "Mughlai",
+  biryani: "Biryani",
+  tandoor: "Tandoor",
+  pizza: "Pizza",
+  pasta: "Pasta",
+  sushi: "Sushi",
+  ramen: "Ramen",
+  cafe: "Cafe",
+  coffee: "Cafe",
+  bakery: "Bakery",
+  seafood: "Seafood",
+  mediterranean: "Mediterranean",
+  continental: "Continental",
+  fast_food: "Fast Food",
+  "fast food": "Fast Food",
+  burger: "Burgers",
+  burgers: "Burgers",
+  grill: "Grill",
+  bar: "Bar & Grill",
+  pub: "Pub Food",
+  vegetarian: "Vegetarian",
+  vegan: "Vegan",
+  arabic: "Arabic",
+  lebanese: "Lebanese",
+  turkish: "Turkish",
+  greek: "Greek",
+  french: "French",
+  spanish: "Spanish",
+  vietnamese: "Vietnamese",
+  ethiopian: "Ethiopian",
+  nepalese: "Nepalese",
+  tibetan: "Tibetan",
+};
+
+const dishesByCuisine: Record<string, string[][]> = {
+  "Indian": [["Butter Chicken", "Dal Makhani", "Naan"], ["Biryani", "Tandoori Chicken", "Raita"]],
+  "North Indian": [["Paneer Tikka", "Chole Bhature", "Lassi"], ["Rogan Josh", "Butter Naan", "Raita"]],
+  "South Indian": [["Masala Dosa", "Idli Sambar", "Filter Coffee"], ["Hyderabadi Biryani", "Vada", "Coconut Chutney"]],
+  "Biryani": [["Hyderabadi Biryani", "Raita", "Mirchi Ka Salan"], ["Lucknowi Biryani", "Kebab", "Phirni"]],
+  "Punjabi": [["Sarson Ka Saag", "Makki Ki Roti", "Lassi"], ["Chole Bhature", "Amritsari Kulcha"]],
+  "Chinese": [["Kung Pao Chicken", "Fried Rice", "Manchurian"], ["Chow Mein", "Spring Rolls", "Hot & Sour Soup"]],
+  "Italian": [["Margherita Pizza", "Pasta Carbonara", "Tiramisu"], ["Risotto", "Bruschetta", "Gelato"]],
+  "Pizza": [["Margherita", "Pepperoni", "Garlic Bread"], ["Quattro Formaggi", "Hawaiian", "Calzone"]],
+  "Japanese": [["Sushi Platter", "Ramen", "Edamame"], ["Tempura", "Teriyaki Chicken", "Miso Soup"]],
+  "Sushi": [["Salmon Nigiri", "Dragon Roll", "Miso Soup"], ["Tuna Sashimi", "California Roll", "Green Tea"]],
+  "Mexican": [["Tacos", "Burritos", "Guacamole"], ["Enchiladas", "Nachos", "Churros"]],
+  "American": [["Burger", "Fries", "Milkshake"], ["BBQ Ribs", "Mac & Cheese", "Coleslaw"]],
+  "Burgers": [["Classic Burger", "Cheese Burger", "Fries"], ["Veggie Burger", "Onion Rings", "Shake"]],
+  "Thai": [["Pad Thai", "Green Curry", "Tom Yum Soup"], ["Massaman Curry", "Spring Rolls", "Mango Rice"]],
+  "Korean": [["Bibimbap", "Korean BBQ", "Kimchi"], ["Bulgogi", "Japchae", "Tteokbokki"]],
+  "Seafood": [["Grilled Fish", "Prawn Curry", "Rice"], ["Fish & Chips", "Lobster", "Crab Cakes"]],
+  "Cafe": [["Cappuccino", "Croissant", "Sandwich"], ["Latte", "Pancakes", "Avocado Toast"]],
+  "Bakery": [["Croissant", "Danish Pastry", "Coffee"], ["Sourdough", "Muffins", "Espresso"]],
+  "Mediterranean": [["Hummus", "Falafel", "Pita Bread"], ["Grilled Lamb", "Tabbouleh", "Baklava"]],
+  "Continental": [["Grilled Chicken", "Caesar Salad", "Soup"], ["Steak", "Mashed Potatoes", "Wine"]],
+  "Fast Food": [["Burger Combo", "Fries", "Cola"], ["Chicken Nuggets", "Wrap", "Shake"]],
 };
 
 const globalCuisines = [
@@ -455,21 +513,14 @@ function enrichRestaurant(
   const rating = 3.8 + rand() * 0.9;
   const reviews = Math.floor(200 + rand() * 4800);
   
-  const cuisineKey = osmData.tags?.cuisine?.toLowerCase().split(",")[0].trim() || "restaurant";
-  const cuisineOptions = cuisineTags[cuisineKey] || globalCuisines;
-  const cuisine = cuisineOptions[Math.floor(rand() * cuisineOptions.length)];
+  const osmCuisineRaw = osmData.tags?.cuisine?.toLowerCase().split(",")[0].split(";")[0].trim() || "";
+  const cuisine = cuisineMapping[osmCuisineRaw] || globalCuisines[Math.floor(rand() * globalCuisines.length)];
   
   const budgetOptions = ["$", "$$", "$$$", "$$$$"];
   const budget = budgetOptions[Math.floor(rand() * budgetOptions.length)] as any;
   
-  const dishes = [
-    "Chef's Special", "House Favorite", "Signature Dish", 
-    "Seasonal Delight", "Traditional Recipe", "Local Delicacy"
-  ];
-  const selectedDishes = [
-    dishes[Math.floor(rand() * dishes.length)],
-    dishes[Math.floor(rand() * dishes.length)],
-  ].filter((d, i, a) => a.indexOf(d) === i);
+  const cuisineDishes = dishesByCuisine[cuisine] || dishesByCuisine["Indian"];
+  const selectedDishes = cuisineDishes[Math.floor(rand() * cuisineDishes.length)] || ["Chef's Special", "House Favorite"];
   
   const tagOptions: Tag[][] = [
     ["Family Friendly", "Large Groups", "Casual"],
@@ -480,14 +531,14 @@ function enrichRestaurant(
   ];
 
   const reviewTemplates = [
-    { text: "Great food and excellent service. Will definitely come back!", rating: 5 },
-    { text: "Good ambiance and tasty food. A bit pricey but worth it.", rating: 4 },
-    { text: "Amazing experience! The dishes were flavorful and fresh.", rating: 5 },
-    { text: "Nice place for family dinners. Food was good, service could be faster.", rating: 4 },
-    { text: "Best restaurant in the area! Highly recommended.", rating: 5 },
-    { text: "Decent food, cozy atmosphere. Good for casual dining.", rating: 3 },
-    { text: "Fantastic flavors! Staff was very accommodating.", rating: 5 },
-    { text: "Pretty good overall. Would visit again for special occasions.", rating: 4 },
+    { text: `The ${cuisine} food here is outstanding. Each dish was perfectly seasoned and beautifully presented.`, rating: 5 },
+    { text: `Great ambiance and tasty food. The ${selectedDishes[0]} was particularly delicious. Slightly pricey but worth it for the quality.`, rating: 4 },
+    { text: `Amazing experience! The ${selectedDishes[1] || 'dishes'} were flavorful and fresh. Will definitely come back with friends.`, rating: 5 },
+    { text: `Nice place for family dinners. Food was good, service could be faster though. The ${selectedDishes[0]} is a must-try.`, rating: 4 },
+    { text: `Best ${cuisine.toLowerCase()} restaurant in ${area}! Highly recommended for the authentic flavors.`, rating: 5 },
+    { text: `Decent food, cozy atmosphere. Good for casual dining. The portion sizes are generous.`, rating: 3 },
+    { text: `Fantastic flavors! Staff was very accommodating. Loved the ${selectedDishes[0]} and ${selectedDishes[1] || 'house special'}.`, rating: 5 },
+    { text: `Pretty good overall. The ${cuisine.toLowerCase()} menu has great variety. Would visit again for special occasions.`, rating: 4 },
   ];
 
   const selectedReviews = [
@@ -499,7 +550,7 @@ function enrichRestaurant(
   const reviewAvatars = ["👩", "👨", "👩‍🦰", "👨‍🦱", "👩‍🦳", "👨‍🦲", "🧑", "👱"];
 
   const isPopular = rating > 4.3 && reviews > 1000;
-  const imageKey = cuisineKey in UNSPLASH_IMAGES ? cuisineKey : "default";
+  const imageKey = osmCuisineRaw in UNSPLASH_IMAGES ? osmCuisineRaw : "default";
 
   const distance = areaCenter && osmData.lat && osmData.lon 
     ? calculateDistance(areaCenter.lat, areaCenter.lon, osmData.lat, osmData.lon)
@@ -512,10 +563,20 @@ function enrichRestaurant(
     ["Budget-friendly", "Value for money", "All-day dining"],
   ];
 
+  const detectedArea = area || 
+    osmData.tags?.["addr:suburb"] || 
+    osmData.tags?.suburb || 
+    osmData.tags?.["addr:neighbourhood"] || 
+    osmData.tags?.neighbourhood || 
+    osmData.tags?.["addr:district"] || 
+    osmData.tags?.district || 
+    osmData.tags?.place ||
+    "Downtown";
+
   return {
     id: `osm-${city.toLowerCase()}-${index}`,
     name: osmData.tags.name,
-    area: area || osmData.tags.suburb || osmData.tags.neighbourhood || "Downtown",
+    area: detectedArea,
     city,
     cuisine,
     budget,
